@@ -1,0 +1,31 @@
+{
+	"Name": "AmplitudeAudio",
+	"Version": "1.0",
+	"Company": "Sparky Studios",
+	"Copyright": "",
+	"GameTarget": "AmplitudeAudioTarget",
+	"EditorTarget": "AmplitudeAudioEditorTarget",
+	"References": [
+		{
+			"Name": "$(EnginePath)/Flax.flaxproj"
+		},
+		{
+			"Name": "$(ProjectPath)/Plugins/AudioSystem/AudioSystem.flaxproj"
+		}
+	],
+	"DefaultScene": null,
+	"DefaultSceneSpawn": {
+		"Position": {
+			"X": 0.0,
+			"Y": 0.0,
+			"Z": 0.0
+		},
+		"Direction": {
+			"X": 0.0,
+			"Y": 0.0,
+			"Z": 0.0
+		}
+	},
+	"MinEngineVersion": "0.0.6167",
+	"EngineNickname": null
+}
