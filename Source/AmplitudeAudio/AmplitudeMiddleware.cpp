@@ -18,10 +18,31 @@
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/FileSystem.h>
 
+#include <chrono>
+#include <thread>
+
 using namespace SparkyStudios::Audio::Amplitude;
 
 namespace AmplitudeAudio
 {
+    namespace
+    {
+        /// Poll a finalize callback with a timeout. Returns true if finalized,
+        /// false if the timeout was reached.
+        template<typename Fn>
+        bool PollWithTimeout(Fn&& tryFinalize, int timeoutMs = 10000, int intervalMs = 10)
+        {
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+            while (!tryFinalize())
+            {
+                if (std::chrono::steady_clock::now() >= deadline)
+                    return false;
+                std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
+            }
+            return true;
+        }
+    } // anonymous namespace
+
     // ========================================================================
     //  Construction / Destruction
     // ========================================================================
@@ -120,11 +141,12 @@ namespace AmplitudeAudio
 
         m_pEngine->SetFileSystem(m_pFileSystem);
 
-        // 7. Open the file system (synchronous for our implementation).
+        // 7. Open the file system.
         m_pEngine->StartOpenFileSystem();
-        while (!m_pEngine->TryFinalizeOpenFileSystem())
+        if (!PollWithTimeout([this]() { return m_pEngine->TryFinalizeOpenFileSystem(); }))
         {
-            // Spin until the file system is open.
+            LOG(Error, "AmplitudeMiddleware: Timed out opening file system");
+            return false;
         }
 
         // 8. Initialize the engine with the platform config file.
@@ -146,9 +168,10 @@ namespace AmplitudeAudio
         }
 
         m_pEngine->StartLoadSoundFiles();
-        while (!m_pEngine->TryFinalizeLoadSoundFiles())
+        if (!PollWithTimeout([this]() { return m_pEngine->TryFinalizeLoadSoundFiles(); }))
         {
-            // Spin until sound files are loaded.
+            LOG(Error, "AmplitudeMiddleware: Timed out loading init sound bank files");
+            return false;
         }
 
         m_bInitialized = true;
@@ -179,9 +202,9 @@ namespace AmplitudeAudio
 
             // Close the file system.
             m_pEngine->StartCloseFileSystem();
-            while (!m_pEngine->TryFinalizeCloseFileSystem())
+            if (!PollWithTimeout([this]() { return m_pEngine->TryFinalizeCloseFileSystem(); }))
             {
-                // Spin until closed.
+                LOG(Warning, "AmplitudeMiddleware: Timed out closing file system during shutdown");
             }
         }
 
@@ -626,9 +649,9 @@ namespace AmplitudeAudio
 
         // Finalize loading of sound files referenced by the bank.
         m_pEngine->StartLoadSoundFiles();
-        while (!m_pEngine->TryFinalizeLoadSoundFiles())
+        if (!PollWithTimeout([this]() { return m_pEngine->TryFinalizeLoadSoundFiles(); }))
         {
-            // Spin until sound files are loaded.
+            LOG(Warning, "AmplitudeMiddleware: Timed out loading sound files for bank: {0}", amBank->BankFilename);
         }
 
         return true;

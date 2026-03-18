@@ -14,65 +14,94 @@ namespace AmplitudeAudio
 {
     // ========================================================================
     //  FlaxMemoryAllocator
+    //
+    //  Every allocation is prefixed with a size header so that Realloc and
+    //  Realign can safely copy only the original number of bytes when growing.
+    //  The header is aligned to at least 16 bytes so that the user pointer
+    //  retains the requested alignment.
     // ========================================================================
+
+    namespace
+    {
+        struct AllocHeader
+        {
+            AmSize size;
+        };
+
+        // Minimum header alignment so user pointer stays well-aligned.
+        constexpr AmSize kHeaderAlignment = 16;
+        constexpr AmSize kHeaderSize = ((sizeof(AllocHeader) + kHeaderAlignment - 1) / kHeaderAlignment) * kHeaderAlignment;
+
+        AmVoidPtr AllocWithHeader(AmSize size, uint64 alignment)
+        {
+            const AmSize totalSize = kHeaderSize + size;
+            const uint64 actualAlignment = alignment > kHeaderAlignment ? alignment : kHeaderAlignment;
+            auto* raw = static_cast<uint8*>(Platform::Allocate(static_cast<uint64>(totalSize), actualAlignment));
+            if (raw == nullptr)
+                return nullptr;
+            auto* header = reinterpret_cast<AllocHeader*>(raw);
+            header->size = size;
+            return raw + kHeaderSize;
+        }
+
+        AllocHeader* GetHeader(AmVoidPtr address)
+        {
+            return reinterpret_cast<AllocHeader*>(static_cast<uint8*>(address) - kHeaderSize);
+        }
+
+        void FreeWithHeader(AmVoidPtr address)
+        {
+            if (address == nullptr)
+                return;
+            Platform::Free(static_cast<uint8*>(address) - kHeaderSize);
+        }
+    } // anonymous namespace
 
     AmVoidPtr FlaxMemoryAllocator::Malloc(eMemoryPoolKind /*pool*/, AmSize size)
     {
-        // Use alignment of 1 to signal "no special alignment requirement".
-        // Platform::Allocate still satisfies at least pointer-sized alignment.
-        return Platform::Allocate(static_cast<uint64>(size), 1u);
+        return AllocWithHeader(size, 1u);
     }
 
     AmVoidPtr FlaxMemoryAllocator::Realloc(eMemoryPoolKind /*pool*/, AmVoidPtr address, AmSize size)
     {
-        // Flax's Platform API does not expose a realloc primitive.
-        // Allocate a fresh block, copy the old contents, then free the
-        // original.  Callers must ensure 'size' does not exceed the
-        // original allocation size when shrinking is not intended.
-        AmVoidPtr newBlock = Platform::Allocate(static_cast<uint64>(size), 1u);
+        AmVoidPtr newBlock = AllocWithHeader(size, 1u);
         if (newBlock != nullptr && address != nullptr)
         {
-            ::memcpy(newBlock, address, size);
-            Platform::Free(address);
+            const AmSize oldSize = GetHeader(address)->size;
+            ::memcpy(newBlock, address, oldSize < size ? oldSize : size);
+            FreeWithHeader(address);
         }
         return newBlock;
     }
 
     AmVoidPtr FlaxMemoryAllocator::Malign(eMemoryPoolKind /*pool*/, AmSize size, AmUInt32 alignment)
     {
-        return Platform::Allocate(static_cast<uint64>(size), static_cast<uint64>(alignment));
+        return AllocWithHeader(size, static_cast<uint64>(alignment));
     }
 
     AmVoidPtr FlaxMemoryAllocator::Realign(
         eMemoryPoolKind /*pool*/, AmVoidPtr address, AmSize size, AmUInt32 alignment)
     {
-        // Flax's Platform API provides no aligned-realloc primitive.
-        // Allocate a fresh block at the required alignment, copy the old
-        // contents (up to the new size), then release the original block.
-        // Callers that need the previous size for the copy are responsible
-        // for not passing a size larger than what was originally allocated.
-        AmVoidPtr newBlock = Platform::Allocate(static_cast<uint64>(size), static_cast<uint64>(alignment));
+        AmVoidPtr newBlock = AllocWithHeader(size, static_cast<uint64>(alignment));
         if (newBlock != nullptr && address != nullptr)
         {
-            // Copy at most 'size' bytes – we have no way of knowing the
-            // exact old size here, so the caller must ensure this is safe.
-            ::memcpy(newBlock, address, size);
-            Platform::Free(address);
+            const AmSize oldSize = GetHeader(address)->size;
+            ::memcpy(newBlock, address, oldSize < size ? oldSize : size);
+            FreeWithHeader(address);
         }
         return newBlock;
     }
 
     void FlaxMemoryAllocator::Free(eMemoryPoolKind /*pool*/, AmVoidPtr address)
     {
-        Platform::Free(address);
+        FreeWithHeader(address);
     }
 
-    AmSize FlaxMemoryAllocator::SizeOf(eMemoryPoolKind /*pool*/, AmVoidPtr /*address*/)
+    AmSize FlaxMemoryAllocator::SizeOf(eMemoryPoolKind /*pool*/, AmVoidPtr address)
     {
-        // Flax's Platform API does not expose a block-size query.
-        // Amplitude uses SizeOf only for memory statistics; returning 0 is
-        // a safe no-op that prevents stat accumulation for this allocator.
-        return 0;
+        if (address == nullptr)
+            return 0;
+        return GetHeader(address)->size;
     }
 
     // ========================================================================
