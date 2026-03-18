@@ -108,7 +108,7 @@ namespace AmplitudeAudio
 
         // 5. Create and configure the custom file system.
         m_pFileSystem = std::make_shared<AmplitudeFileSystem>();
-        m_pFileSystem->SetBasePath(AM_OS_STRING(kAssetBasePath));
+        m_pFileSystem->SetBasePath(AM_STRING_TO_OS_STRING(kAssetBasePath));
 
         // 6. Get the engine singleton and attach the file system.
         m_pEngine = Engine::GetInstance();
@@ -129,7 +129,7 @@ namespace AmplitudeAudio
 
         // 8. Initialize the engine with the platform config file.
         const StringAnsi configFileAnsi(config->EngineConfigFile.Get(), config->EngineConfigFile.Length());
-        const AmOsString configFileOs = AM_OS_STRING(configFileAnsi.Get());
+        const AmOsString configFileOs = AM_STRING_TO_OS_STRING(configFileAnsi.Get());
         if (!m_pEngine->Initialize(configFileOs))
         {
             LOG(Error, "AmplitudeMiddleware: Engine initialization failed with config: {0}", config->EngineConfigFile);
@@ -138,7 +138,7 @@ namespace AmplitudeAudio
 
         // 9. Load the initial sound bank and finalize sound file loading.
         const StringAnsi initBankAnsi(config->InitSoundBank.Get(), config->InitSoundBank.Length());
-        const AmOsString initBankOs = AM_OS_STRING(initBankAnsi.Get());
+        const AmOsString initBankOs = AM_STRING_TO_OS_STRING(initBankAnsi.Get());
         if (!m_pEngine->LoadSoundBank(initBankOs))
         {
             LOG(Error, "AmplitudeMiddleware: Failed to load init sound bank: {0}", config->InitSoundBank);
@@ -613,7 +613,7 @@ namespace AmplitudeAudio
 
         auto* amBank = static_cast<AmplitudeBankData*>(data);
         const StringAnsi filenameAnsi(amBank->BankFilename.Get(), amBank->BankFilename.Length());
-        const AmOsString filenameOs = AM_OS_STRING(filenameAnsi.Get());
+        const AmOsString filenameOs = AM_STRING_TO_OS_STRING(filenameAnsi.Get());
 
         AmBankID outID = 0;
         if (!m_pEngine->LoadSoundBank(filenameOs, outID))
