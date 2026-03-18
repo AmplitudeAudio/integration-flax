@@ -8,7 +8,6 @@
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/Platform.h>
 
-#include <cstdlib>   // ::realloc, ::malloc_usable_size / ::_msize
 #include <cstring>   // ::memcpy
 
 namespace AmplitudeAudio
@@ -26,10 +25,17 @@ namespace AmplitudeAudio
 
     AmVoidPtr FlaxMemoryAllocator::Realloc(eMemoryPoolKind /*pool*/, AmVoidPtr address, AmSize size)
     {
-        // Flax's Platform API does not expose a realloc primitive, so fall
-        // back to the C standard library realloc which is safe to mix with
-        // Platform::Free on all supported platforms.
-        return ::realloc(address, size);
+        // Flax's Platform API does not expose a realloc primitive.
+        // Allocate a fresh block, copy the old contents, then free the
+        // original.  Callers must ensure 'size' does not exceed the
+        // original allocation size when shrinking is not intended.
+        AmVoidPtr newBlock = Platform::Allocate(static_cast<uint64>(size), 1u);
+        if (newBlock != nullptr && address != nullptr)
+        {
+            ::memcpy(newBlock, address, size);
+            Platform::Free(address);
+        }
+        return newBlock;
     }
 
     AmVoidPtr FlaxMemoryAllocator::Malign(eMemoryPoolKind /*pool*/, AmSize size, AmUInt32 alignment)
