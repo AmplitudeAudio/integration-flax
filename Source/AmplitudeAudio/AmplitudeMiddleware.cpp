@@ -11,20 +11,28 @@
 #include "Core/AmplitudeAudioData.h"
 #include "Core/AmplitudeHelpers.h"
 #include "Core/Common.h"
+#include "IO/AmplitudeFile.h"
 #include "IO/AmplitudeFileSystem.h"
 
+#include <Engine/Engine/Globals.h>
 #include <Engine/Content/Content.h>
 #include <Engine/Content/JsonAsset.h>
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/FileSystem.h>
+#include <Engine/Platform/StringUtils.h>
+#include <Engine/Serialization/Serialization.h>
+#include <Engine/Platform/File.h>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
 #include <chrono>
 #include <thread>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 namespace AmplitudeAudio
 {
+    using namespace SparkyStudios::Audio::Amplitude;
+    using AmEngine = SparkyStudios::Audio::Amplitude::Engine;
+
     namespace
     {
         /// Poll a finalize callback with a timeout. Returns true if finalized,
@@ -85,8 +93,26 @@ namespace AmplitudeAudio
             return false;
         }
 
-        // Parse profiles from the JSON document.
-        m_profiles.LoadFromJson(*asset->Data);
+        if (asset->Data == nullptr)
+        {
+            LOG(Error, "AmplitudeMiddleware: Configuration asset has no data: {0}", String(configFile));
+            return false;
+        }
+
+        // Deserialize configuration directly from the JSON Data node.
+        Array<AmplitudePlatformProfile> profiles;
+        String projectBuildPath;
+        String projectSourcesPath;
+        {
+            auto& stream = *asset->Data;
+            ISerializeModifier* modifier = nullptr;
+            DESERIALIZE_MEMBER(Profiles, profiles);
+            DESERIALIZE_MEMBER(ProjectBuildPath, projectBuildPath);
+            DESERIALIZE_MEMBER(ProjectSourcesPath, projectSourcesPath);
+        }
+
+        // Populate the internal profiles map.
+        m_profiles.LoadFromAsset(profiles, projectBuildPath, projectSourcesPath);
 
         // Validate that a profile exists for the current platform.
         const String platform = AmplitudeAssetProfiles::GetCurrentPlatform();
@@ -122,17 +148,26 @@ namespace AmplitudeAudio
         MemoryManager::Initialize(std::make_unique<FlaxMemoryAllocator>());
 
         // 3. Set up the Flax logger as the default Amplitude logger.
-        Logger::SetDefault(std::make_unique<FlaxLogger>());
+        static FlaxLogger sFlaxLogger;
+        Logger::SetLogger(&sFlaxLogger);
 
         // 4. Register default Amplitude SDK extensions (codecs, drivers, etc.).
-        Engine::RegisterDefaultExtensions();
+        AmEngine::RegisterDefaultExtensions();
 
         // 5. Create and configure the custom file system.
+        //    Base path = {kAssetBasePath}/{ProjectBuildPath}
         m_pFileSystem = std::make_shared<AmplitudeFileSystem>();
-        m_pFileSystem->SetBasePath(AM_STRING_TO_OS_STRING(kAssetBasePath));
+        const String& buildPath = m_profiles.GetProjectBuildPath();
+        String basePath = String(kAssetBasePath);
+        if (!buildPath.IsEmpty())
+        {
+            basePath += buildPath;
+        }
+        const StringAnsi basePathAnsi(basePath.Get(), basePath.Length());
+        m_pFileSystem->SetBasePath(AM_STRING_TO_OS_STRING(basePathAnsi.Get()));
 
         // 6. Get the engine singleton and attach the file system.
-        m_pEngine = Engine::GetInstance();
+        m_pEngine = AmEngine::GetInstance();
         if (m_pEngine == nullptr)
         {
             LOG(Error, "AmplitudeMiddleware: Failed to get Engine instance");
@@ -209,8 +244,8 @@ namespace AmplitudeAudio
         }
 
         // Unregister default extensions and destroy the engine singleton.
-        Engine::UnregisterDefaultExtensions();
-        Engine::DestroyInstance();
+        AmEngine::UnregisterDefaultExtensions();
+        AmEngine::DestroyInstance();
         m_pEngine = nullptr;
 
         // Tear down the Amplitude memory manager.
@@ -233,6 +268,73 @@ namespace AmplitudeAudio
 
         m_pEngine->StopAll();
     }
+
+    // ========================================================================
+    //  DeployFiles (editor only)
+    // ========================================================================
+
+#if USE_EDITOR
+    bool AmplitudeMiddleware::DeployFiles(const StringView& outputPath)
+    {
+        const String& buildPath = m_profiles.GetProjectBuildPath();
+        if (buildPath.IsEmpty())
+        {
+            LOG(Warning, "[AmplitudeMiddleware] DeployFiles: no ProjectBuildPath configured — nothing to deploy.");
+            return true;
+        }
+
+        // Source: <ProjectFolder>/Content/Sounds/Amplitude/<BuildPath>/
+        const String sourceDir = Globals::ProjectFolder / String(kAssetBasePath) / buildPath;
+        if (!FileSystem::DirectoryExists(sourceDir))
+        {
+            LOG(Warning, "[AmplitudeMiddleware] DeployFiles: build directory not found: {0}", sourceDir);
+            return false;
+        }
+
+        // Destination: <outputPath>/Content/Sounds/Amplitude/<BuildPath>/
+        const String destDir = String(outputPath) / String(kAssetBasePath) / buildPath;
+
+        if (!FileSystem::DirectoryExists(destDir))
+        {
+            if (FileSystem::CreateDirectory(destDir))
+            {
+                LOG(Error, "[AmplitudeMiddleware] DeployFiles: failed to create directory: {0}", destDir);
+                return false;
+            }
+        }
+
+        Array<String, HeapAllocation> files;
+        FileSystem::DirectoryGetFiles(files, sourceDir, TEXT("*"), DirectorySearchOption::AllDirectories);
+
+        int32 copiedCount = 0;
+        for (const String& srcFile : files)
+        {
+            const String relativePart = srcFile.Substring(sourceDir.Length());
+            const String destFile = destDir + relativePart;
+
+            const String destFileDir = String(StringUtils::GetDirectoryName(destFile));
+            if (!FileSystem::DirectoryExists(destFileDir))
+            {
+                if (FileSystem::CreateDirectory(destFileDir))
+                {
+                    LOG(Warning, "[AmplitudeMiddleware] DeployFiles: could not create directory: {0}", destFileDir);
+                    continue;
+                }
+            }
+
+            if (FileSystem::CopyFile(destFile, srcFile))
+            {
+                LOG(Warning, "[AmplitudeMiddleware] DeployFiles: failed to copy: {0}", srcFile);
+                continue;
+            }
+
+            ++copiedCount;
+        }
+
+        LOG(Info, "[AmplitudeMiddleware] DeployFiles: copied {0} file(s) from {1} to {2}", copiedCount, sourceDir, destDir);
+        return true;
+    }
+#endif
 
     // ========================================================================
     //  Entity (8)
@@ -328,7 +430,7 @@ namespace AmplitudeAudio
             return false;
 
         AmVector3 location;
-        Orientation orientation;
+        Orientation orientation(0.0f, 0.0f, 0.0f);
         FlaxTransformToAmplitude(transform, location, orientation);
 
         entity.SetLocation(location);
@@ -381,7 +483,7 @@ namespace AmplitudeAudio
         // Reset to origin with default orientation.
         const AmVector3 origin = { 0.0f, 0.0f, 0.0f };
         listener.SetLocation(origin);
-        listener.SetOrientation(Orientation());
+        listener.SetOrientation(Orientation(0.0f, 0.0f, 0.0f));
         return true;
     }
 
@@ -407,7 +509,7 @@ namespace AmplitudeAudio
             return false;
 
         AmVector3 location;
-        Orientation orientation;
+        Orientation orientation(0.0f, 0.0f, 0.0f);
         FlaxTransformToAmplitude(transform, location, orientation);
 
         listener.SetLocation(location);

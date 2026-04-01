@@ -10,6 +10,8 @@
 
 #include <AudioSystem/Core/AudioMiddleware.h>
 
+#include "Core/Cpp20Compat.h"
+
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 
 #include "AmplitudeConfiguration.h"
@@ -37,6 +39,10 @@ namespace AmplitudeAudio
         void Shutdown() override;
         void Release() override;
         void StopAllSounds() override;
+
+#if USE_EDITOR
+        bool DeployFiles(const StringView& outputPath) override;
+#endif
 
         // ====================================================================
         //  Entity (8)
