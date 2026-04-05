@@ -3,6 +3,10 @@
 // ============================================================================
 
 #include "AmplitudeFile.h"
+#include "../Core/Common.h"
+
+#include <Engine/Core/Types/String.h>
+#include <Engine/Core/Types/StringView.h>
 
 namespace AmplitudeAudio
 {
@@ -195,7 +199,7 @@ namespace AmplitudeAudio
         if (m_handle != nullptr)
         {
             m_handle->Close();
-            delete m_handle;
+            Delete(m_handle);
             m_handle = nullptr;
         }
     }

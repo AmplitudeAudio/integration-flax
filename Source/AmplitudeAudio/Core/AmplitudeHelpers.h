@@ -13,15 +13,16 @@
 
 #include <AudioSystem/Core/AudioSystemData.h>
 
+#include "Cpp20Compat.h"
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 namespace AmplitudeAudio
 {
+    using namespace SparkyStudios::Audio::Amplitude;
     // ========================================================================
     //  FlaxMemoryAllocator
     // ========================================================================

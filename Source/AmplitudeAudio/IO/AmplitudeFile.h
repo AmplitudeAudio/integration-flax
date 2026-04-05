@@ -9,19 +9,21 @@
 //  ::FileBase-derived handle obtained via ::File::Open().
 // ============================================================================
 
+#include "../Core/Cpp20Compat.h"
+
 #include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
 #include <Engine/Platform/File.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 namespace AmplitudeAudio
 {
+    using namespace SparkyStudios::Audio::Amplitude;
+
     /// \brief Amplitude File implementation backed by Flax platform file I/O.
     ///
     /// The constructor opens the file immediately using Flax's ::File::Open().
     /// IsValid() returns false if the open failed or the file was already closed.
-    class AmplitudeFile final : public File
+    class AmplitudeFile final : public SparkyStudios::Audio::Amplitude::File
     {
     public:
         /// \brief Opens the file at \p path with the given Amplitude open \p mode.

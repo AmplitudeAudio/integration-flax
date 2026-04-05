@@ -1,3 +1,17 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 // ============================================================================
@@ -20,9 +34,13 @@ namespace AmplitudeAudio
 /// Flax calls Initialize() after all modules are loaded and Deinitialize()
 /// before they are unloaded. The plugin owns the AmplitudeMiddleware instance
 /// and is responsible for registering and unregistering it with the AudioSystem.
-API_CLASS() class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
+///
+/// Configuration is loaded from a well-known JSON asset at
+/// Content/Sounds/Amplitude/Config.json. This asset must contain per-platform
+/// profiles with InitSoundBank and EngineConfigFile entries.
+API_CLASS()
+class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
 {
-    API_AUTO_SERIALIZATION();
     DECLARE_SCRIPTING_TYPE(AmplitudeAudioPlugin);
 
 public:
@@ -30,22 +48,12 @@ public:
     //  GamePlugin overrides
     // ========================================================================
 
-    /// \brief Creates the AmplitudeMiddleware instance and registers it with
-    ///        the AudioSystem.
+    /// \brief Creates the AmplitudeMiddleware instance, loads configuration,
+    ///        and starts the AudioSystem.
     void Initialize() override;
 
     /// \brief Unregisters and destroys the AmplitudeMiddleware instance.
     void Deinitialize() override;
-
-    // ========================================================================
-    //  Plugin metadata
-    // ========================================================================
-
-    /// \return Human-readable plugin name shown in the Flax editor.
-    String GetName() const override;
-
-    /// \return Short description of what this plugin provides.
-    String GetDescription() const override;
 
 private:
     /// Owned middleware instance. Created in Initialize(), destroyed in Deinitialize().

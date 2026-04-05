@@ -36,7 +36,7 @@ namespace AmplitudeAudio
     static constexpr const char* kExtConfig = ".amconfig";
 
     /// Binary pack files that bundle multiple Amplitude assets together.
-    static constexpr const char* kExtPack = ".ampack";
+    static constexpr const char* kExtPack = ".ampk";
 
     // ========================================================================
     //  Default asset names

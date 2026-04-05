@@ -7,6 +7,10 @@
 
 #include <Engine/Platform/FileSystem.h>
 #include <Engine/Core/Types/String.h>
+#include <Engine/Core/Types/StringView.h>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
 namespace AmplitudeAudio
 {
@@ -37,20 +41,12 @@ namespace AmplitudeAudio
 
     static bool IsPathSeparator(AmOsChar c)
     {
-#if defined(AM_WCHAR_SUPPORTED)
-        return c == L'/' || c == L'\\';
-#else
-        return c == '/' || c == '\\';
-#endif
+        return c == AM_OS_STRING('/') || c == AM_OS_STRING('\\');
     }
 
     static AmOsChar PathSeparator()
     {
-#if defined(AM_WCHAR_SUPPORTED)
-        return L'/';
-#else
-        return '/';
-#endif
+        return AM_OS_STRING('/');
     }
 
     // ------------------------------------------------------------------------
@@ -77,13 +73,7 @@ namespace AmplitudeAudio
         const AmOsChar firstChar = path.front();
         const bool isAbsolute =
             IsPathSeparator(firstChar) ||
-            (path.size() >= 2 && path[1] ==
-#if defined(AM_WCHAR_SUPPORTED)
-             L':'
-#else
-             ':'
-#endif
-            );
+            (path.size() >= 2 && path[1] == AM_OS_STRING(':'));
 
         if (isAbsolute)
             return path;
@@ -93,14 +83,14 @@ namespace AmplitudeAudio
 
     bool AmplitudeFileSystem::Exists(const AmOsString& path) const
     {
-        const ::String flaxPath = AmOsStringToFlaxString(path);
+        const ::String flaxPath = AmOsStringToFlaxString(ResolvePath(path));
         return ::FileSystem::FileExists(flaxPath) ||
                ::FileSystem::DirectoryExists(flaxPath);
     }
 
     bool AmplitudeFileSystem::IsDirectory(const AmOsString& path) const
     {
-        const ::String flaxPath = AmOsStringToFlaxString(path);
+        const ::String flaxPath = AmOsStringToFlaxString(ResolvePath(path));
         return ::FileSystem::DirectoryExists(flaxPath);
     }
 
@@ -139,9 +129,9 @@ namespace AmplitudeAudio
         return result;
     }
 
-    std::shared_ptr<File> AmplitudeFileSystem::OpenFile(const AmOsString& path, eFileOpenMode mode) const
+    std::shared_ptr<SparkyStudios::Audio::Amplitude::File> AmplitudeFileSystem::OpenFile(const AmOsString& path, eFileOpenMode mode) const
     {
-        return std::make_shared<AmplitudeFile>(path, mode);
+        return ampoolshared(eMemoryPoolKind_IO, AmplitudeFile, ResolvePath(path), mode);
     }
 
     void AmplitudeFileSystem::StartOpenFileSystem()
@@ -163,5 +153,4 @@ namespace AmplitudeAudio
     {
         return true;
     }
-
 } // namespace AmplitudeAudio

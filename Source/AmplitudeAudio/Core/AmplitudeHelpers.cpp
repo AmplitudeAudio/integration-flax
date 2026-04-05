@@ -8,6 +8,8 @@
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/Platform.h>
 
+#include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
+
 #include <cstring>   // ::memcpy
 
 namespace AmplitudeAudio
@@ -146,10 +148,13 @@ namespace AmplitudeAudio
 
     AmVector3 FlaxVec3ToAmVec3(const Vector3& vec)
     {
-        // Both types store components as (x, y, z) floats; a direct copy
-        // is sufficient.
-        const AmVector3 result = { vec.X, vec.Y, vec.Z };
-        return result;
+        static const CartesianCoordinateSystem flax(
+            CartesianCoordinateSystem::Axis::PositiveX,
+            CartesianCoordinateSystem::Axis::PositiveZ,
+            CartesianCoordinateSystem::Axis::PositiveY);
+
+        const AmVector3 result = { vec.X / 100.0f, vec.Y / 100.0f, vec.Z / 100.0f };
+        return CartesianCoordinateSystem::ConvertToDefault(result, flax);
     }
 
     void FlaxTransformToAmplitude(
@@ -162,11 +167,6 @@ namespace AmplitudeAudio
         const AmVector3 forward = FlaxVec3ToAmVec3(transform.Forward);
         const AmVector3 up      = FlaxVec3ToAmVec3(transform.Up);
 
-        // Orientation(forward, up) stores the canonical look direction and
-        // the world-up direction so the SDK can reconstruct any rotation
-        // matrix it needs.  The ezEngine integration negates forward, but the
-        // Amplitude SDK's Orientation constructor takes the *actual* forward
-        // vector (not its negation), so we pass it unchanged here.
         outOrientation = Orientation(forward, up);
     }
 

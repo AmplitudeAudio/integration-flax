@@ -15,18 +15,20 @@
 //      platform path separator.
 // ============================================================================
 
-#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
+#include "../Core/Cpp20Compat.h"
 
-using namespace SparkyStudios::Audio::Amplitude;
+#include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 namespace AmplitudeAudio
 {
+    using namespace SparkyStudios::Audio::Amplitude;
+
     /// \brief Amplitude FileSystem implementation backed by Flax platform APIs.
     ///
     /// This implementation is synchronous: StartOpenFileSystem() and
     /// StartCloseFileSystem() complete immediately, and the corresponding
     /// TryFinalize* methods always return true.
-    class AmplitudeFileSystem final : public FileSystem
+    class AmplitudeFileSystem final : public SparkyStudios::Audio::Amplitude::FileSystem
     {
     public:
         AmplitudeFileSystem() = default;
@@ -57,7 +59,7 @@ namespace AmplitudeAudio
 
         /// Opens the file at \p path with the given \p mode.
         /// \return A shared AmplitudeFile, or an invalid instance on error.
-        [[nodiscard]] std::shared_ptr<File> OpenFile(const AmOsString& path, eFileOpenMode mode) const override;
+        [[nodiscard]] std::shared_ptr<SparkyStudios::Audio::Amplitude::File> OpenFile(const AmOsString& path, eFileOpenMode mode) const override;
 
         /// Marks the file system as open (no-op: Flax has no async mount step).
         void StartOpenFileSystem() override;

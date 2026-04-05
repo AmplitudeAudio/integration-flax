@@ -1,18 +1,37 @@
 // ============================================================================
-//  AmplitudeConfiguration — Per-platform configuration profiles
-//  (implementation)
+//  AmplitudeConfiguration — implementation
 // ============================================================================
 
 #include "AmplitudeConfiguration.h"
 
 #include <Engine/Platform/Platform.h>
+#include <Engine/Serialization/Serialization.h>
+
+// ============================================================================
+//  AmplitudeConfigurationAsset — ISerializable
+// ============================================================================
+
+void AmplitudeConfigurationAsset::Serialize(SerializeStream& stream, const void* otherObj)
+{
+    const auto* other = static_cast<const AmplitudeConfigurationAsset*>(otherObj);
+    SERIALIZE_MEMBER(Profiles, Profiles);
+    SERIALIZE_MEMBER(ProjectBuildPath, ProjectBuildPath);
+    SERIALIZE_MEMBER(ProjectSourcesPath, ProjectSourcesPath);
+}
+
+void AmplitudeConfigurationAsset::Deserialize(DeserializeStream& stream, ISerializeModifier* modifier)
+{
+    DESERIALIZE_MEMBER(Profiles, Profiles);
+    DESERIALIZE_MEMBER(ProjectBuildPath, ProjectBuildPath);
+    DESERIALIZE_MEMBER(ProjectSourcesPath, ProjectSourcesPath);
+}
+
+// ============================================================================
+//  AmplitudeAssetProfiles
+// ============================================================================
 
 namespace AmplitudeAudio
 {
-    // ========================================================================
-    //  AmplitudeAssetProfiles — profile management
-    // ========================================================================
-
     void AmplitudeAssetProfiles::Add(const String& platformName, const AmplitudeConfiguration& config)
     {
         m_profiles[platformName] = config;
@@ -20,13 +39,18 @@ namespace AmplitudeAudio
 
     const AmplitudeConfiguration* AmplitudeAssetProfiles::Get(const String& platformName) const
     {
-        const AmplitudeConfiguration* result = m_profiles.TryGet(platformName);
-        return result;
+        return m_profiles.TryGet(platformName);
     }
 
-    // ========================================================================
-    //  AmplitudeAssetProfiles — platform detection
-    // ========================================================================
+    const String& AmplitudeAssetProfiles::GetProjectBuildPath() const
+    {
+        return m_projectBuildPath;
+    }
+
+    const String& AmplitudeAssetProfiles::GetProjectSourcesPath() const
+    {
+        return m_projectSourcesPath;
+    }
 
     String AmplitudeAssetProfiles::GetCurrentPlatform()
     {
@@ -35,40 +59,22 @@ namespace AmplitudeAudio
 #elif PLATFORM_WINDOWS || PLATFORM_LINUX || PLATFORM_MAC
         return TEXT("Desktop");
 #else
-        // Fallback to Desktop for any other/unknown platform.
         return TEXT("Desktop");
 #endif
     }
 
-    // ========================================================================
-    //  AmplitudeAssetProfiles — JSON loading
-    // ========================================================================
-
-    void AmplitudeAssetProfiles::LoadFromJson(const JsonTools::Value& node)
+    void AmplitudeAssetProfiles::LoadFromAsset(
+        const Array<AmplitudePlatformProfile>& profiles,
+        const String& projectBuildPath,
+        const String& projectSourcesPath)
     {
-        // Clear existing profiles before populating from JSON.
         m_profiles.Clear();
+        m_projectBuildPath = projectBuildPath;
+        m_projectSourcesPath = projectSourcesPath;
 
-        // Look for the top-level "Profiles" object.
-        const auto profilesMember = node.FindMember("Profiles");
-        if (profilesMember == node.MemberEnd() || !profilesMember->value.IsObject())
-            return;
-
-        const JsonTools::Value& profilesNode = profilesMember->value;
-
-        for (auto it = profilesNode.MemberBegin(); it != profilesNode.MemberEnd(); ++it)
+        for (const auto& profile : profiles)
         {
-            if (!it->value.IsObject())
-                continue;
-
-            // Platform name key (narrow string from JSON, converted to Flax String).
-            const String platformName(it->name.GetString());
-
-            AmplitudeConfiguration config;
-            config.InitSoundBank   = JsonTools::GetString(it->value, "InitSoundBank");
-            config.EngineConfigFile = JsonTools::GetString(it->value, "EngineConfigFile");
-
-            m_profiles[platformName] = config;
+            m_profiles[profile.PlatformName] = profile.Config;
         }
     }
 
