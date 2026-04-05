@@ -121,6 +121,12 @@ void AmplitudeControlsGenerator::ScanSwitches(
         if (doc.HasMember("id") && doc["id"].IsUint64())
             switchEntry.AmplitudeId = doc["id"].GetUint64();
 
+        // Keep the generated switch entry label aligned with the authored
+        // switch token used to namespace switch states. Fall back to the file
+        // stem only when the authored token is unavailable.
+        if (!switchEntry.AmplitudeName.IsEmpty())
+            switchEntry.Name = switchEntry.AmplitudeName;
+
         if (!switchEntry.Name.IsEmpty())
             out.Add(switchEntry);
 
@@ -137,16 +143,20 @@ void AmplitudeControlsGenerator::ScanSwitches(
                 AudioControlEntry stateEntry;
                 stateEntry.Type = AudioControlType::SwitchState;
 
-                // State Name = parent switch filename + "/" + state name from JSON.
+                // State Name = authored parent switch token + "/" + state name from JSON.
                 if (stateNode.HasMember("name") && stateNode["name"].IsString())
                 {
                     const String stateName(stateNode["name"].GetString());
-                    stateEntry.Name = switchEntry.Name + TEXT("/") + stateName;
+                    const String& switchToken = switchEntry.Name;
+                    stateEntry.Name = switchToken + TEXT("/") + stateName;
                     stateEntry.AmplitudeName = stateName;
+                    stateEntry.ParentAmplitudeName = switchToken;
                 }
 
                 if (stateNode.HasMember("id") && stateNode["id"].IsUint64())
                     stateEntry.AmplitudeId = stateNode["id"].GetUint64();
+
+                stateEntry.ParentAmplitudeId = switchEntry.AmplitudeId;
 
                 if (!stateEntry.Name.IsEmpty())
                     out.Add(stateEntry);
@@ -323,6 +333,13 @@ bool AmplitudeControlsGenerator::ReloadControls(
         writer.JKEY("AmplitudeName");
         const StringAnsi ampNameAnsi(e.AmplitudeName);
         writer.String(ampNameAnsi.Get(), ampNameAnsi.Length());
+
+        writer.JKEY("ParentAmplitudeId");
+        writer.Uint64(e.ParentAmplitudeId);
+
+        writer.JKEY("ParentAmplitudeName");
+        const StringAnsi parentAmpNameAnsi(e.ParentAmplitudeName);
+        writer.String(parentAmpNameAnsi.Get(), parentAmpNameAnsi.Length());
 
         writer.EndObject();
     }

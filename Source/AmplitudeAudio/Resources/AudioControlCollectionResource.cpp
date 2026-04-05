@@ -4,6 +4,7 @@
 
 #include "AudioControlCollectionResource.h"
 
+#include <Engine/Core/Log.h>
 #include <Engine/Serialization/Serialization.h>
 
 // ============================================================================
@@ -57,12 +58,28 @@ namespace AmplitudeAudio
         return data;
     }
 
+    AmplitudeSwitchData* AudioControlEntryDeserializer::DeserializeSwitchEntry(
+        const AudioControlEntry& entry)
+    {
+        AmplitudeSwitchData* data = New<AmplitudeSwitchData>();
+        data->SwitchID = static_cast<AmSwitchID>(entry.AmplitudeId);
+        return data;
+    }
+
     AmplitudeSwitchStateData* AudioControlEntryDeserializer::DeserializeSwitchStateEntry(
         const AudioControlEntry& entry)
     {
+        if (entry.ParentAmplitudeId == 0)
+        {
+            LOG(Warning,
+                "[AudioControlEntryDeserializer] SwitchState entry '{0}' is missing parent switch metadata. Regenerate controls.",
+                entry.Name);
+            return nullptr;
+        }
+
         AmplitudeSwitchStateData* data = New<AmplitudeSwitchStateData>();
-        data->SwitchID = static_cast<AmSwitchID>(entry.AmplitudeId);
-        data->StateID = 0;
+        data->SwitchID = static_cast<AmSwitchID>(entry.ParentAmplitudeId);
+        data->StateID = static_cast<AmObjectID>(entry.AmplitudeId);
         return data;
     }
 

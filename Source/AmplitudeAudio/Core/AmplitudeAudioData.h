@@ -138,6 +138,21 @@ namespace AmplitudeAudio
     };
 
     // ========================================================================
+    //  AmplitudeSwitchData
+    // ========================================================================
+
+    /// \brief Holds the Amplitude switch container ID.
+    class AmplitudeSwitchData final : public AudioSystemSwitchData
+    {
+    public:
+        AmplitudeSwitchData();
+        ~AmplitudeSwitchData() override = default;
+
+        /// Amplitude switch asset ID (0 = unset).
+        AmSwitchID SwitchID;
+    };
+
+    // ========================================================================
     //  AmplitudeSwitchStateData
     // ========================================================================
 

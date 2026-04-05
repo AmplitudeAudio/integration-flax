@@ -40,16 +40,19 @@ enum class AudioControlType : uint8
 
 /// \brief A single named audio control stored inside an AudioControlCollection.
 ///
-/// Exactly one of \c AmplitudeId or \c AmplitudeName needs to be set,
-/// depending on whether the backing Amplitude asset is looked up by
-/// numeric ID or by string name.
+/// \c Name is the authored control label used by editor tooling and runtime
+/// lookup. For switch containers it matches the authored switch token; for
+/// switch states it uses the fully qualified \c <switch>/<state> label while
+/// the parent and child metadata remain split across the Amplitude fields.
 API_STRUCT()
 struct AMPLITUDEAUDIO_API AudioControlEntry : public ISerializable
 {
     DECLARE_SCRIPTING_TYPE_MINIMAL(AudioControlEntry);
     API_AUTO_SERIALIZATION();
 
-    /// Human-readable label for this control (used in editor UI and logging).
+    /// Authored control label used in editor UI, logging, and name-based lookup.
+    /// Switch entries use the switch token; switch-state entries use
+    /// \c <switch-token>/<state-token>.
     API_FIELD(Attributes="EditorOrder(0)")
     String Name;
 
@@ -57,15 +60,29 @@ struct AMPLITUDEAUDIO_API AudioControlEntry : public ISerializable
     API_FIELD(Attributes="EditorOrder(1)")
     AudioControlType Type = AudioControlType::Invalid;
 
-    /// Numeric Amplitude asset ID (e.g. AmEventID, AmRtpcID).
-    /// Use 0 when the entry is identified by \c AmplitudeName instead.
+    /// Numeric Amplitude asset ID for this entry's primary control object
+    /// (e.g. event ID, RTPC ID, switch ID, or switch-state ID).
+    /// For switch-state entries this stores the child state ID; the parent
+    /// switch ID lives in \c ParentAmplitudeId.
     API_FIELD(Attributes="EditorOrder(2)")
     uint64 AmplitudeId = 0;
 
-    /// String name used by Amplitude for name-based lookup (e.g. "init.ambank").
-    /// Leave empty when the entry is identified by \c AmplitudeId instead.
+    /// Authored Amplitude token for this entry's primary control object
+    /// (e.g. event name, bank filename, or switch-state name).
+    /// For switch-state entries this stores only the child state token; the
+    /// parent switch token lives in \c ParentAmplitudeName.
     API_FIELD(Attributes="EditorOrder(3)")
     String AmplitudeName;
+
+    /// Parent Amplitude asset ID for child controls such as switch states.
+    /// Leave at 0 for top-level controls that do not belong to a parent container.
+    API_FIELD(Attributes="EditorOrder(4)")
+    uint64 ParentAmplitudeId = 0;
+
+    /// Parent Amplitude asset token for child controls such as switch states.
+    /// Leave empty for top-level controls that do not belong to a parent container.
+    API_FIELD(Attributes="EditorOrder(5)")
+    String ParentAmplitudeName;
 };
 
 // ============================================================================
@@ -122,6 +139,7 @@ namespace AmplitudeAudio
     {
         static AmplitudeTriggerData* DeserializeTriggerEntry(const AudioControlEntry& entry);
         static AmplitudeRtpcData* DeserializeRtpcEntry(const AudioControlEntry& entry);
+        static AmplitudeSwitchData* DeserializeSwitchEntry(const AudioControlEntry& entry);
         static AmplitudeSwitchStateData* DeserializeSwitchStateEntry(const AudioControlEntry& entry);
         static AmplitudeEnvironmentData* DeserializeEnvironmentEntry(const AudioControlEntry& entry);
         static AmplitudeBankData* DeserializeBankEntry(const AudioControlEntry& entry);
