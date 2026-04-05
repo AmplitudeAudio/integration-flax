@@ -143,7 +143,7 @@ void AudioControlsComponent::Load()
         //     else
         //     {
         //         LOG(Error, "[AudioControlsComponent] Failed to register bank '{0}'.", entry.Name);
-        //         delete data;
+        //         Delete(data);
         //     }
         //     break;
         // }
@@ -158,7 +158,7 @@ void AudioControlsComponent::Load()
             else
             {
                 LOG(Error, "[AudioControlsComponent] Failed to register trigger '{0}'.", entry.Name);
-                delete data;
+                Delete(data);
             }
             break;
         }
@@ -173,7 +173,7 @@ void AudioControlsComponent::Load()
             else
             {
                 LOG(Error, "[AudioControlsComponent] Failed to register RTPC '{0}'.", entry.Name);
-                delete data;
+                Delete(data);
             }
             break;
         }
@@ -188,7 +188,7 @@ void AudioControlsComponent::Load()
             else
             {
                 LOG(Error, "[AudioControlsComponent] Failed to register switch state '{0}'.", entry.Name);
-                delete data;
+                Delete(data);
             }
             break;
         }
@@ -203,7 +203,7 @@ void AudioControlsComponent::Load()
             else
             {
                 LOG(Error, "[AudioControlsComponent] Failed to register environment '{0}'.", entry.Name);
-                delete data;
+                Delete(data);
             }
             break;
         }

@@ -5,12 +5,14 @@
 //
 //  Attaches an AudioControlCollection JSON asset to an actor. When
 //  AutoLoad is true the collection is registered with the AudioSystem on
-//  OnBeginPlay() and deregistered on OnEndPlay().
+//  OnEnable() and deregistered on OnDisable().
 // ============================================================================
 
+#include <Engine/Core/Collections/Array.h>
 #include <Engine/Core/Types/String.h>
+#include <Engine/Scripting/Script.h>
 
-#include "AmplitudeComponent.h"
+#include <AudioSystem/Core/AudioSystemData.h>
 
 /// \brief Script component that loads and manages an AudioControlCollection
 ///        asset at runtime.
@@ -19,8 +21,8 @@
 /// actor's lifetime. Set ControlsAssetPath to a project-relative path
 /// (e.g. "Content/Sounds/Amplitude/MyControls.json") and leave AutoLoad
 /// enabled to have controls loaded automatically when play starts.
-API_CLASS(Attributes="Category(\"Sound/Amplitude\")")
-class AMPLITUDEAUDIO_API AudioControlsComponent : public AmplitudeComponent
+API_CLASS(Attributes="FlaxEngine.Category(\"Sound/Amplitude\")")
+class AMPLITUDEAUDIO_API AudioControlsComponent : public Script
 {
     API_AUTO_SERIALIZATION();
     DECLARE_SCRIPTING_TYPE(AudioControlsComponent);
@@ -63,9 +65,16 @@ public:
     //  Script lifecycle overrides
     // ========================================================================
 
-    void OnBeginPlay() override;
-    void OnEndPlay() override;
+    void OnEnable() override;
+    void OnDisable() override;
 
 private:
     bool _loaded = false;
+
+    /// IDs of registered controls, grouped by type for ordered unregistration.
+    Array<AudioSystemDataID> _registeredBankIds;
+    Array<AudioSystemDataID> _registeredTriggerIds;
+    Array<AudioSystemDataID> _registeredRtpcIds;
+    Array<AudioSystemDataID> _registeredSwitchStateIds;
+    Array<AudioSystemDataID> _registeredEnvironmentIds;
 };

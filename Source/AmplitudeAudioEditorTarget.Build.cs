@@ -8,5 +8,6 @@ public class AmplitudeAudioEditorTarget : GameProjectEditorTarget
         base.Init();
 
         Modules.Add("AmplitudeAudio");
+        Modules.Add("AmplitudeAudioEditor");
     }
 }
