@@ -15,13 +15,14 @@
 
 #include <AudioSystem/Core/AudioSystemData.h>
 
+#include "Cpp20Compat.h"
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 namespace AmplitudeAudio
 {
+    using namespace SparkyStudios::Audio::Amplitude;
     // ========================================================================
     //  AmplitudeEntityData
     // ========================================================================
@@ -56,6 +57,9 @@ namespace AmplitudeAudio
 
         /// Amplitude listener ID (0 = not registered).
         AmListenerID ListenerID;
+
+        /// Whether the listener is the default listener.
+        bool IsDefault;
     };
 
     // ========================================================================
@@ -184,7 +188,7 @@ namespace AmplitudeAudio
         AmplitudeBankData();
         ~AmplitudeBankData() override = default;
 
-        /// Amplitude bank asset ID assigned after a successful load (0 = unloaded).
+        /// Current runtime Amplitude bank handle assigned by middleware bank tracking (0 = unloaded).
         AmBankID BankID;
 
         /// Filename of the bank file (e.g. "init.ambank").

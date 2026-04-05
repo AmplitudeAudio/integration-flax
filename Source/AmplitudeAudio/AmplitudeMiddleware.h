@@ -8,10 +8,10 @@
 //  overridden here.
 // ============================================================================
 
-#include <AudioSystem/Core/AudioMiddleware.h>
-
 #include "Core/Cpp20Compat.h"
 
+#include <AudioSystem/Core/AudioMiddleware.h>
+#include <Engine/Core/Collections/Dictionary.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 
 #include "AmplitudeConfiguration.h"
@@ -25,7 +25,7 @@ namespace AmplitudeAudio
     /// Lifecycle: LoadConfiguration -> Startup -> Update loop -> Shutdown -> Release.
     class AmplitudeMiddleware final : public AudioMiddleware
     {
-    public:
+      public:
         AmplitudeMiddleware();
         ~AmplitudeMiddleware() override;
 
@@ -50,31 +50,31 @@ namespace AmplitudeAudio
 
         AudioSystemEntityData* CreateWorldEntity(AudioSystemDataID id) override;
         AudioSystemEntityData* CreateEntityData(AudioSystemDataID id) override;
-        void DestroyEntityData(AudioSystemEntityData* data) override;
-        bool AddEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
-        bool ResetEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
-        bool UpdateEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
-        bool RemoveEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
-        bool SetEntityTransform(AudioSystemDataID id, AudioSystemEntityData* data, const AudioSystemTransform& transform) override;
+        void                   DestroyEntityData(AudioSystemEntityData* data) override;
+        bool                   AddEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
+        bool                   ResetEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
+        bool                   UpdateEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
+        bool                   RemoveEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
+        bool                   SetEntityTransform(AudioSystemDataID id, AudioSystemEntityData* data, const AudioSystemTransform& transform) override;
 
         // ====================================================================
         //  Listener (6)
         // ====================================================================
 
-        AudioSystemListenerData* CreateListenerData(AudioSystemDataID id) override;
-        void DestroyListenerData(AudioSystemListenerData* data) override;
-        bool AddListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
-        bool ResetListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
-        bool RemoveListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
-        bool SetListenerTransform(AudioSystemDataID id, AudioSystemListenerData* data, const AudioSystemTransform& transform) override;
+        AudioSystemListenerData* CreateListenerData(AudioSystemDataID id, bool isDefault) override;
+        void                     DestroyListenerData(AudioSystemListenerData* data) override;
+        bool                     AddListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
+        bool                     ResetListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
+        bool                     RemoveListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
+        bool                     SetListenerTransform(AudioSystemDataID id, AudioSystemListenerData* data, const AudioSystemTransform& transform) override;
 
         // ====================================================================
         //  Event (3)
         // ====================================================================
 
         AudioSystemEventData* CreateEventData(AudioSystemDataID id) override;
-        void ResetEventData(AudioSystemEventData* data) override;
-        void DestroyEventData(AudioSystemEventData* data) override;
+        void                  ResetEventData(AudioSystemEventData* data) override;
+        void                  DestroyEventData(AudioSystemEventData* data) override;
 
         // ====================================================================
         //  Trigger (5)
@@ -132,16 +132,28 @@ namespace AmplitudeAudio
         //  Global (8)
         // ====================================================================
 
-        void SetLanguage(StringView language) override;
-        void OnMasterGainChange(float gain) override;
-        void OnMuteChange(bool muted) override;
-        void OnLoseFocus() override;
-        void OnGainFocus() override;
+        void       SetLanguage(StringView language) override;
+        void       OnMasterGainChange(float gain) override;
+        void       OnMuteChange(bool muted) override;
+        void       OnLoseFocus() override;
+        void       OnGainFocus() override;
         StringView GetMiddlewareName() const override;
-        float GetMasterGain() const override;
-        bool GetMute() const override;
+        float      GetMasterGain() const override;
+        bool       GetMute() const override;
 
-    private:
+      private:
+        struct LoadedBankState
+        {
+            SparkyStudios::Audio::Amplitude::AmBankID BankID = 0;
+            int32 RefCount = 0;
+        };
+
+        void CleanupRuntimeState(bool closeFileSystem, bool unregisterExtensions);
+        void ResetRuntimeState();
+        void ResetBankTracking();
+        void ReleaseTrackedBankReference(AudioSystemBankData* data);
+        void ReleaseTrackedBankReference(const String& filename);
+
         /// Amplitude Engine singleton (obtained via Engine::GetInstance()).
         SparkyStudios::Audio::Amplitude::Engine* m_pEngine;
 
@@ -150,6 +162,12 @@ namespace AmplitudeAudio
 
         /// Per-platform configuration profiles loaded from JSON.
         AmplitudeAssetProfiles m_profiles;
+
+        /// Shared runtime load state keyed by sound-bank filename.
+        Dictionary<String, LoadedBankState> m_loadedBanksByFilename;
+
+        /// Wrapper-to-filename ownership map used to keep per-wrapper loads idempotent.
+        Dictionary<const AudioSystemBankData*, String> m_loadedBankFilenames;
 
         /// Whether Startup() completed successfully.
         bool m_bInitialized;
