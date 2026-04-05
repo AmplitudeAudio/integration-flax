@@ -1,0 +1,30 @@
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+ColumnLimit: 0
+
+BreakBeforeBraces: Allman
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+SpaceBeforeParens: ControlStatements
+NamespaceIndentation: All
+IndentCaseLabels: true
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<.*>$'
+    Priority: 2
+  - Regex: '^".*"$'
+    Priority: 3
+
+SortUsingDeclarations: true
