@@ -75,6 +75,7 @@ private:
     Array<AudioSystemDataID> _registeredBankIds;
     Array<AudioSystemDataID> _registeredTriggerIds;
     Array<AudioSystemDataID> _registeredRtpcIds;
+    Array<AudioSystemDataID> _registeredSwitchIds;
     Array<AudioSystemDataID> _registeredSwitchStateIds;
     Array<AudioSystemDataID> _registeredEnvironmentIds;
 };

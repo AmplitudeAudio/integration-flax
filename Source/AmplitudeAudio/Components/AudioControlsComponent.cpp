@@ -180,12 +180,12 @@ void AudioControlsComponent::Load()
         case AudioControlType::SwitchState:
         {
             AudioSystemSwitchStateData* data = AudioControlEntryDeserializer::DeserializeSwitchStateEntry(entry);
-            if (audioSystem->RegisterSwitchState(id, entry.AmplitudeName, data))
+            if (data != nullptr && audioSystem->RegisterSwitchState(id, entry.Name, data))
             {
                 _registeredSwitchStateIds.Add(id);
                 ++registeredCount;
             }
-            else
+            else if (data != nullptr)
             {
                 LOG(Error, "[AudioControlsComponent] Failed to register switch state '{0}'.", entry.Name);
                 Delete(data);
@@ -208,8 +208,20 @@ void AudioControlsComponent::Load()
             break;
         }
         case AudioControlType::Switch:
-            LOG(Info, "[AudioControlsComponent] Skipping Switch container entry '{0}' — only SwitchState entries are registered.", entry.Name);
+        {
+            AudioSystemSwitchData* data = AudioControlEntryDeserializer::DeserializeSwitchEntry(entry);
+            if (audioSystem->RegisterSwitch(id, entry.AmplitudeName, data))
+            {
+                _registeredSwitchIds.Add(id);
+                ++registeredCount;
+            }
+            else
+            {
+                LOG(Error, "[AudioControlsComponent] Failed to register switch '{0}'.", entry.Name);
+                Delete(data);
+            }
             break;
+        }
         case AudioControlType::Invalid:
         default:
             LOG(Warning, "[AudioControlsComponent] Skipping entry '{0}' with unknown type {1}.", entry.Name, static_cast<int>(entry.Type));
@@ -260,6 +272,9 @@ void AudioControlsComponent::Unload()
         for (const auto rtpcId : _registeredRtpcIds)
             audioSystem->UnregisterRtpc(rtpcId);
 
+        for (const auto switchId : _registeredSwitchIds)
+            audioSystem->UnregisterSwitch(switchId);
+
         for (const auto ssId : _registeredSwitchStateIds)
             audioSystem->UnregisterSwitchState(ssId);
 
@@ -270,6 +285,7 @@ void AudioControlsComponent::Unload()
     // _registeredBankIds.Clear();
     _registeredTriggerIds.Clear();
     _registeredRtpcIds.Clear();
+    _registeredSwitchIds.Clear();
     _registeredSwitchStateIds.Clear();
     _registeredEnvironmentIds.Clear();
 

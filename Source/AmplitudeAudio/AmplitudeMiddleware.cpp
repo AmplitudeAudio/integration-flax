@@ -11,7 +11,6 @@
 #include "Core/AmplitudeAudioData.h"
 #include "Core/AmplitudeHelpers.h"
 #include "Core/Common.h"
-#include "IO/AmplitudeFile.h"
 #include "IO/AmplitudeFileSystem.h"
 
 #include <Engine/Engine/Globals.h>
@@ -781,7 +780,19 @@ namespace AmplitudeAudio
         if (!m_bInitialized)
             return false;
 
+        if (data == nullptr)
+        {
+            LOG(Warning, "AmplitudeMiddleware: Invalid switch-state payload.");
+            return false;
+        }
+
         auto* amSwitch = static_cast<AmplitudeSwitchStateData*>(data);
+        if (amSwitch->SwitchID == 0 || amSwitch->StateID == 0)
+        {
+            LOG(Warning, "AmplitudeMiddleware: Invalid switch-state payload.");
+            return false;
+        }
+
         m_pEngine->SetSwitchState(amSwitch->SwitchID, amSwitch->StateID);
         return true;
     }
