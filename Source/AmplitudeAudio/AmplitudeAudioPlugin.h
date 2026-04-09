@@ -43,7 +43,7 @@ class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
 {
     DECLARE_SCRIPTING_TYPE(AmplitudeAudioPlugin);
 
-public:
+  public:
     // ========================================================================
     //  GamePlugin overrides
     // ========================================================================
@@ -55,7 +55,7 @@ public:
     /// \brief Unregisters and destroys the AmplitudeMiddleware instance.
     void Deinitialize() override;
 
-private:
+  private:
     /// Owned middleware instance. Created in Initialize(), destroyed in Deinitialize().
     AmplitudeAudio::AmplitudeMiddleware* _middleware = nullptr;
 };
