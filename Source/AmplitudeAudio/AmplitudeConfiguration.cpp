@@ -65,11 +65,11 @@ namespace AmplitudeAudio
 
     void AmplitudeAssetProfiles::LoadFromAsset(
         const Array<AmplitudePlatformProfile>& profiles,
-        const String& projectBuildPath,
-        const String& projectSourcesPath)
+        const String&                          projectBuildPath,
+        const String&                          projectSourcesPath)
     {
         m_profiles.Clear();
-        m_projectBuildPath = projectBuildPath;
+        m_projectBuildPath   = projectBuildPath;
         m_projectSourcesPath = projectSourcesPath;
 
         for (const auto& profile : profiles)

@@ -45,12 +45,12 @@ struct AMPLITUDEAUDIO_API AmplitudeConfiguration : public ISerializable
 
     /// Filename of the initial sound bank to load at startup.
     /// Example: "init.ambank"
-    API_FIELD(Attributes="EditorOrder(0)")
+    API_FIELD(Attributes = "EditorOrder(0)")
     String InitSoundBank;
 
     /// Filename of the Amplitude engine config file.
     /// Example: "pc.amconfig"
-    API_FIELD(Attributes="EditorOrder(1)")
+    API_FIELD(Attributes = "EditorOrder(1)")
     String EngineConfigFile;
 };
 
@@ -66,11 +66,11 @@ struct AMPLITUDEAUDIO_API AmplitudePlatformProfile : public ISerializable
     API_AUTO_SERIALIZATION();
 
     /// Platform name (e.g. "Desktop", "Mobile").
-    API_FIELD(Attributes="EditorOrder(0)")
+    API_FIELD(Attributes = "EditorOrder(0)")
     String PlatformName;
 
     /// Configuration for this platform.
-    API_FIELD(Attributes="EditorOrder(1)")
+    API_FIELD(Attributes = "EditorOrder(1)")
     AmplitudeConfiguration Config;
 };
 
@@ -82,26 +82,26 @@ struct AMPLITUDEAUDIO_API AmplitudePlatformProfile : public ISerializable
 ///
 /// Create via the editor's "New > Audio > Amplitude Configuration" context menu.
 /// Contains an array of platform profiles and an optional Amplitude project path.
-API_CLASS(Attributes="ContentContextMenu(\"New/Audio/Amplitude Configuration\")")
+API_CLASS(Attributes = "ContentContextMenu(\"New/Audio System/Amplitude/Configuration\")")
 class AMPLITUDEAUDIO_API AmplitudeConfigurationAsset : public ScriptingObject, public ISerializable
 {
     DECLARE_SCRIPTING_TYPE_WITH_CONSTRUCTOR_IMPL(AmplitudeConfigurationAsset, ScriptingObject);
 
-public:
+  public:
     /// Per-platform configuration profiles.
-    API_FIELD(Attributes="EditorOrder(0)")
+    API_FIELD(Attributes = "EditorOrder(0)")
     Array<AmplitudePlatformProfile> Profiles;
 
     /// Path to the Amplitude project build output, relative to kAssetBasePath.
     /// At runtime, the Amplitude file system base path is set to {kAssetBasePath}/{ProjectBuildPath}.
     /// Example: "build" if built assets are at Content/Sounds/Amplitude/build/
-    API_FIELD(Attributes="EditorOrder(1)")
+    API_FIELD(Attributes = "EditorOrder(1)")
     String ProjectBuildPath;
 
     /// Path to the Amplitude project sources, relative to kAssetBasePath.
     /// Used by the editor controls generator to scan for audio control definitions.
     /// Example: "sources" if source JSON files are at Content/Sounds/Amplitude/sources/
-    API_FIELD(Attributes="EditorOrder(2)")
+    API_FIELD(Attributes = "EditorOrder(2)")
     String ProjectSourcesPath;
 
     // ========================================================================
@@ -123,13 +123,13 @@ namespace AmplitudeAudio
     /// Used internally by the middleware to store loaded configuration.
     class AmplitudeAssetProfiles
     {
-    public:
-        AmplitudeAssetProfiles() = default;
+      public:
+        AmplitudeAssetProfiles()  = default;
         ~AmplitudeAssetProfiles() = default;
 
-        void Add(const String& platformName, const AmplitudeConfiguration& config);
+        void                                        Add(const String& platformName, const AmplitudeConfiguration& config);
         [[nodiscard]] const AmplitudeConfiguration* Get(const String& platformName) const;
-        [[nodiscard]] static String GetCurrentPlatform();
+        [[nodiscard]] static String                 GetCurrentPlatform();
 
         /// Build output path, relative to kAssetBasePath. Used at runtime.
         [[nodiscard]] const String& GetProjectBuildPath() const;
@@ -139,13 +139,13 @@ namespace AmplitudeAudio
 
         /// Populates this object from an AmplitudeConfigurationAsset's data.
         void LoadFromAsset(const Array<AmplitudePlatformProfile>& profiles,
-                           const String& projectBuildPath,
-                           const String& projectSourcesPath);
+                           const String&                          projectBuildPath,
+                           const String&                          projectSourcesPath);
 
-    private:
+      private:
         Dictionary<String, AmplitudeConfiguration> m_profiles;
-        String m_projectBuildPath;
-        String m_projectSourcesPath;
+        String                                     m_projectBuildPath;
+        String                                     m_projectSourcesPath;
     };
 
 } // namespace AmplitudeAudio

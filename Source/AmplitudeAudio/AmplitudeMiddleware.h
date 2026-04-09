@@ -8,7 +8,9 @@
 //  overridden here.
 // ============================================================================
 
+// clang-formatt off
 #include "Core/Cpp20Compat.h"
+// clang-format on
 
 #include <AudioSystem/Core/AudioMiddleware.h>
 #include <Engine/Core/Collections/Dictionary.h>
@@ -144,8 +146,8 @@ namespace AmplitudeAudio
       private:
         struct LoadedBankState
         {
-            SparkyStudios::Audio::Amplitude::AmBankID BankID = 0;
-            int32 RefCount = 0;
+            SparkyStudios::Audio::Amplitude::AmBankID BankID   = 0;
+            int32                                     RefCount = 0;
         };
 
         void CleanupRuntimeState(bool closeFileSystem, bool unregisterExtensions);
