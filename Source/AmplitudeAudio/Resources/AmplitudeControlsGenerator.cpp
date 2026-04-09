@@ -12,14 +12,13 @@
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/File.h>
 #include <Engine/Platform/FileSystem.h>
+#include <Engine/Serialization/JsonTools.h>
 #include <Engine/Serialization/JsonWriter.h>
 #include <Engine/Serialization/JsonWriters.h>
-#include <Engine/Serialization/JsonTools.h>
 #include <Engine/Serialization/Serialization.h>
+#include <cstring>
 
 #include "AmplitudeAudio/Core/Common.h"
-
-#include <cstring>
 
 // ============================================================================
 //  Helpers
@@ -44,7 +43,7 @@ namespace
     String FileNameStem(const String& path)
     {
         // Find last separator.
-        int32 lastSep = path.FindLast(TEXT('/'));
+        int32       lastSep     = path.FindLast(TEXT('/'));
         const int32 lastBackSep = path.FindLast(TEXT('\\'));
         if (lastBackSep > lastSep)
             lastSep = lastBackSep;
@@ -65,7 +64,7 @@ namespace
         FileSystem::DirectoryGetFiles(
             outPaths, dir, TEXT("*.json"), DirectorySearchOption::AllDirectories);
     }
-}
+} // namespace
 
 // ============================================================================
 //  Per-category scanners
@@ -146,10 +145,10 @@ void AmplitudeControlsGenerator::ScanSwitches(
                 // State Name = authored parent switch token + "/" + state name from JSON.
                 if (stateNode.HasMember("name") && stateNode["name"].IsString())
                 {
-                    const String stateName(stateNode["name"].GetString());
-                    const String& switchToken = switchEntry.Name;
-                    stateEntry.Name = switchToken + TEXT("/") + stateName;
-                    stateEntry.AmplitudeName = stateName;
+                    const String  stateName(stateNode["name"].GetString());
+                    const String& switchToken      = switchEntry.Name;
+                    stateEntry.Name                = switchToken + TEXT("/") + stateName;
+                    stateEntry.AmplitudeName       = stateName;
                     stateEntry.ParentAmplitudeName = switchToken;
                 }
 
@@ -291,7 +290,7 @@ bool AmplitudeControlsGenerator::ReloadControls(
     //    { "ID": "guid", "TypeName": "AudioControlCollection",
     //      "EngineBuild": 0, "Data": { ... } }
     rapidjson_flax::StringBuffer buffer;
-    PrettyJsonWriter writer(buffer);
+    PrettyJsonWriter             writer(buffer);
 
     writer.StartObject();
 
@@ -378,7 +377,7 @@ String AmplitudeControlsGenerator::GetProjectSourcesPath()
 
     String projectSourcesPath;
     {
-        auto& stream = *asset->Data;
+        auto&               stream   = *asset->Data;
         ISerializeModifier* modifier = nullptr;
         DESERIALIZE_MEMBER(ProjectSourcesPath, projectSourcesPath);
     }

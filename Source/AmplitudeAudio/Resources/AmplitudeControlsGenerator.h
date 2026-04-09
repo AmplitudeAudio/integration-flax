@@ -32,7 +32,7 @@ class AMPLITUDEAUDIO_API AmplitudeControlsGenerator
 {
     DECLARE_SCRIPTING_TYPE_NO_SPAWN(AmplitudeControlsGenerator);
 
-public:
+  public:
     /// \brief Scans the Amplitude project at \p projectPath and writes
     ///        an AudioControlCollection JSON asset to \p outputAssetPath.
     ///
@@ -59,7 +59,7 @@ public:
     /// \return Array of discovered AudioControlEntry values.
     static Array<AudioControlEntry> GenerateFromProject(const String& projectPath);
 
-private:
+  private:
     static void ScanEvents(const String& dir, Array<AudioControlEntry>& out);
     static void ScanSwitches(const String& dir, Array<AudioControlEntry>& out);
     static void ScanRtpcs(const String& dir, Array<AudioControlEntry>& out);

@@ -46,7 +46,7 @@ namespace AmplitudeAudio
         const AudioControlEntry& entry)
     {
         AmplitudeTriggerData* data = New<AmplitudeTriggerData>();
-        data->EventID = static_cast<AmEventID>(entry.AmplitudeId);
+        data->EventID              = static_cast<AmEventID>(entry.AmplitudeId);
         return data;
     }
 
@@ -54,7 +54,7 @@ namespace AmplitudeAudio
         const AudioControlEntry& entry)
     {
         AmplitudeRtpcData* data = New<AmplitudeRtpcData>();
-        data->RtpcID = static_cast<AmRtpcID>(entry.AmplitudeId);
+        data->RtpcID            = static_cast<AmRtpcID>(entry.AmplitudeId);
         return data;
     }
 
@@ -62,7 +62,7 @@ namespace AmplitudeAudio
         const AudioControlEntry& entry)
     {
         AmplitudeSwitchData* data = New<AmplitudeSwitchData>();
-        data->SwitchID = static_cast<AmSwitchID>(entry.AmplitudeId);
+        data->SwitchID            = static_cast<AmSwitchID>(entry.AmplitudeId);
         return data;
     }
 
@@ -78,8 +78,8 @@ namespace AmplitudeAudio
         }
 
         AmplitudeSwitchStateData* data = New<AmplitudeSwitchStateData>();
-        data->SwitchID = static_cast<AmSwitchID>(entry.ParentAmplitudeId);
-        data->StateID = static_cast<AmObjectID>(entry.AmplitudeId);
+        data->SwitchID                 = static_cast<AmSwitchID>(entry.ParentAmplitudeId);
+        data->StateID                  = static_cast<AmObjectID>(entry.AmplitudeId);
         return data;
     }
 
@@ -87,7 +87,7 @@ namespace AmplitudeAudio
         const AudioControlEntry& entry)
     {
         AmplitudeEnvironmentData* data = New<AmplitudeEnvironmentData>();
-        data->EnvironmentID = static_cast<AmEnvironmentID>(entry.AmplitudeId);
+        data->EnvironmentID            = static_cast<AmEnvironmentID>(entry.AmplitudeId);
         return data;
     }
 
@@ -95,8 +95,8 @@ namespace AmplitudeAudio
         const AudioControlEntry& entry)
     {
         AmplitudeBankData* data = New<AmplitudeBankData>();
-        data->BankID = static_cast<AmBankID>(entry.AmplitudeId);
-        data->BankFilename = entry.AmplitudeName;
+        data->BankID            = static_cast<AmBankID>(entry.AmplitudeId);
+        data->BankFilename      = entry.AmplitudeName + TEXT(".ambank");
         return data;
     }
 } // namespace AmplitudeAudio

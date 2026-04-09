@@ -53,35 +53,35 @@ struct AMPLITUDEAUDIO_API AudioControlEntry : public ISerializable
     /// Authored control label used in editor UI, logging, and name-based lookup.
     /// Switch entries use the switch token; switch-state entries use
     /// \c <switch-token>/<state-token>.
-    API_FIELD(Attributes="EditorOrder(0)")
+    API_FIELD(Attributes = "EditorOrder(0)")
     String Name;
 
     /// Discriminator that determines which Amplitude data type this entry maps to.
-    API_FIELD(Attributes="EditorOrder(1)")
+    API_FIELD(Attributes = "EditorOrder(1)")
     AudioControlType Type = AudioControlType::Invalid;
 
     /// Numeric Amplitude asset ID for this entry's primary control object
     /// (e.g. event ID, RTPC ID, switch ID, or switch-state ID).
     /// For switch-state entries this stores the child state ID; the parent
     /// switch ID lives in \c ParentAmplitudeId.
-    API_FIELD(Attributes="EditorOrder(2)")
+    API_FIELD(Attributes = "EditorOrder(2)")
     uint64 AmplitudeId = 0;
 
     /// Authored Amplitude token for this entry's primary control object
     /// (e.g. event name, bank filename, or switch-state name).
     /// For switch-state entries this stores only the child state token; the
     /// parent switch token lives in \c ParentAmplitudeName.
-    API_FIELD(Attributes="EditorOrder(3)")
+    API_FIELD(Attributes = "EditorOrder(3)")
     String AmplitudeName;
 
     /// Parent Amplitude asset ID for child controls such as switch states.
     /// Leave at 0 for top-level controls that do not belong to a parent container.
-    API_FIELD(Attributes="EditorOrder(4)")
+    API_FIELD(Attributes = "EditorOrder(4)")
     uint64 ParentAmplitudeId = 0;
 
     /// Parent Amplitude asset token for child controls such as switch states.
     /// Leave empty for top-level controls that do not belong to a parent container.
-    API_FIELD(Attributes="EditorOrder(5)")
+    API_FIELD(Attributes = "EditorOrder(5)")
     String ParentAmplitudeName;
 };
 
@@ -93,18 +93,18 @@ struct AMPLITUDEAUDIO_API AudioControlEntry : public ISerializable
 ///
 /// Create via the editor's "New > Audio > Audio Control Collection" context
 /// menu entry.
-API_CLASS(Attributes="ContentContextMenu(\"New/Audio/Audio Control Collection\")")
+API_CLASS(Attributes = "ContentContextMenu(\"New/Audio System/Amplitude/Audio Control Collection\")")
 class AMPLITUDEAUDIO_API AudioControlCollection : public ScriptingObject, public ISerializable
 {
     DECLARE_SCRIPTING_TYPE_WITH_CONSTRUCTOR_IMPL(AudioControlCollection, ScriptingObject);
 
-public:
+  public:
     // ========================================================================
     //  Data access (exposed to editor via API_PROPERTY)
     // ========================================================================
 
     /// The audio control entries in this collection.
-    API_PROPERTY(Attributes="EditorOrder(0)")
+    API_PROPERTY(Attributes = "EditorOrder(0)")
     const Array<AudioControlEntry>& GetControls() const;
 
     /// Sets the audio control entries in this collection.
@@ -118,7 +118,7 @@ public:
     void Serialize(SerializeStream& stream, const void* otherObj) override;
     void Deserialize(DeserializeStream& stream, ISerializeModifier* modifier) override;
 
-private:
+  private:
     Array<AudioControlEntry> _controls;
 };
 
@@ -137,14 +137,14 @@ namespace AmplitudeAudio
     /// ownership and is responsible for deleting the returned pointer.
     struct AudioControlEntryDeserializer
     {
-        static AmplitudeTriggerData* DeserializeTriggerEntry(const AudioControlEntry& entry);
-        static AmplitudeRtpcData* DeserializeRtpcEntry(const AudioControlEntry& entry);
-        static AmplitudeSwitchData* DeserializeSwitchEntry(const AudioControlEntry& entry);
+        static AmplitudeTriggerData*     DeserializeTriggerEntry(const AudioControlEntry& entry);
+        static AmplitudeRtpcData*        DeserializeRtpcEntry(const AudioControlEntry& entry);
+        static AmplitudeSwitchData*      DeserializeSwitchEntry(const AudioControlEntry& entry);
         static AmplitudeSwitchStateData* DeserializeSwitchStateEntry(const AudioControlEntry& entry);
         static AmplitudeEnvironmentData* DeserializeEnvironmentEntry(const AudioControlEntry& entry);
-        static AmplitudeBankData* DeserializeBankEntry(const AudioControlEntry& entry);
+        static AmplitudeBankData*        DeserializeBankEntry(const AudioControlEntry& entry);
 
-    private:
+      private:
         AudioControlEntryDeserializer() = delete;
     };
 
