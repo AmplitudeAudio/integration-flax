@@ -9,11 +9,8 @@
 //  ::FileBase-derived handle obtained via ::File::Open().
 // ============================================================================
 
-#include "../Core/Cpp20Compat.h"
-
-#include <SparkyStudios/Audio/Amplitude/IO/File.h>
-
 #include <Engine/Platform/File.h>
+#include <SparkyStudios/Audio/Amplitude/IO/File.h>
 
 namespace AmplitudeAudio
 {
@@ -25,7 +22,7 @@ namespace AmplitudeAudio
     /// IsValid() returns false if the open failed or the file was already closed.
     class AmplitudeFile final : public SparkyStudios::Audio::Amplitude::File
     {
-    public:
+      public:
         /// \brief Opens the file at \p path with the given Amplitude open \p mode.
         ///
         /// \param path  Amplitude OS string path to the file on disk.
@@ -71,7 +68,7 @@ namespace AmplitudeAudio
         /// Closes the file and releases the handle.
         void Close() override;
 
-    private:
+      private:
         AmOsString  m_path;
         ::FileBase* m_handle;
     };

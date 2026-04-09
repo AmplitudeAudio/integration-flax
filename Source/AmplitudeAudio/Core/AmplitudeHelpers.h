@@ -9,12 +9,12 @@
 //    3. Coordinate helpers   – convert Flax spatial types to Amplitude types
 // ============================================================================
 
-#include <Engine/Core/Math/Vector3.h>
+// clang-formatt off
+#include "Cpp20Compat.h"
+// clang-format on
 
 #include <AudioSystem/Core/AudioSystemData.h>
-
-#include "Cpp20Compat.h"
-
+#include <Engine/Core/Math/Vector3.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 #include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
@@ -34,7 +34,7 @@ namespace AmplitudeAudio
     /// available for future diagnostic use.
     class FlaxMemoryAllocator final : public MemoryAllocator
     {
-    public:
+      public:
         /// Allocates \p size bytes from the given Amplitude pool.
         AmVoidPtr Malloc(eMemoryPoolKind pool, AmSize size) override;
 
@@ -71,7 +71,7 @@ namespace AmplitudeAudio
     ///   Critical               -> LogType::Fatal
     class FlaxLogger final : public Logger
     {
-    protected:
+      protected:
         void Log(eLogMessageLevel level, const char* file, int line, const AmString& message) override;
     };
 
@@ -93,7 +93,7 @@ namespace AmplitudeAudio
     ///             forward and up unit vectors.
     void FlaxTransformToAmplitude(
         const AudioSystemTransform& transform,
-        AmVector3& outLocation,
-        Orientation& outOrientation);
+        AmVector3&                  outLocation,
+        Orientation&                outOrientation);
 
 } // namespace AmplitudeAudio

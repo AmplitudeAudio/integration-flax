@@ -11,12 +11,12 @@
 //  construction and destruction.
 // ============================================================================
 
-#include <Engine/Core/Types/String.h>
+// clang-formatt off
+#include "Cpp20Compat.h"
+// clang-format on
 
 #include <AudioSystem/Core/AudioSystemData.h>
-
-#include "Cpp20Compat.h"
-
+#include <Engine/Core/Types/String.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 
@@ -33,7 +33,7 @@ namespace AmplitudeAudio
     /// that the middleware should track each frame.
     class AmplitudeEntityData final : public AudioSystemEntityData
     {
-    public:
+      public:
         AmplitudeEntityData();
         ~AmplitudeEntityData() override = default;
 
@@ -51,7 +51,7 @@ namespace AmplitudeAudio
     /// \brief Holds the Amplitude listener ID for a registered audio listener.
     class AmplitudeListenerData final : public AudioSystemListenerData
     {
-    public:
+      public:
         AmplitudeListenerData();
         ~AmplitudeListenerData() override = default;
 
@@ -72,7 +72,7 @@ namespace AmplitudeAudio
     /// this class stores the ID used to look up and fire that event at runtime.
     class AmplitudeTriggerData final : public AudioSystemTriggerData
     {
-    public:
+      public:
         AmplitudeTriggerData();
         ~AmplitudeTriggerData() override = default;
 
@@ -108,7 +108,7 @@ namespace AmplitudeAudio
     /// the current playback state.
     class AmplitudeEventData final : public AudioSystemEventData
     {
-    public:
+      public:
         AmplitudeEventData();
         ~AmplitudeEventData() override = default;
 
@@ -129,7 +129,7 @@ namespace AmplitudeAudio
     /// \brief Holds the Amplitude RTPC (Real-Time Parameter Control) ID.
     class AmplitudeRtpcData final : public AudioSystemRtpcData
     {
-    public:
+      public:
         AmplitudeRtpcData();
         ~AmplitudeRtpcData() override = default;
 
@@ -144,7 +144,7 @@ namespace AmplitudeAudio
     /// \brief Holds the Amplitude switch container ID.
     class AmplitudeSwitchData final : public AudioSystemSwitchData
     {
-    public:
+      public:
         AmplitudeSwitchData();
         ~AmplitudeSwitchData() override = default;
 
@@ -162,7 +162,7 @@ namespace AmplitudeAudio
     /// the currently selected state within that container.
     class AmplitudeSwitchStateData final : public AudioSystemSwitchStateData
     {
-    public:
+      public:
         AmplitudeSwitchStateData();
         ~AmplitudeSwitchStateData() override = default;
 
@@ -180,7 +180,7 @@ namespace AmplitudeAudio
     /// \brief Holds the Amplitude environment (aux-bus / reverb zone) ID.
     class AmplitudeEnvironmentData final : public AudioSystemEnvironmentData
     {
-    public:
+      public:
         AmplitudeEnvironmentData();
         ~AmplitudeEnvironmentData() override = default;
 
@@ -199,7 +199,7 @@ namespace AmplitudeAudio
     /// requesting a load or unload of the bank at runtime.
     class AmplitudeBankData final : public AudioSystemBankData
     {
-    public:
+      public:
         AmplitudeBankData();
         ~AmplitudeBankData() override = default;
 

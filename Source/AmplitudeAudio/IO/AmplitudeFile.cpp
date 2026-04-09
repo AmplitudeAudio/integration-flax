@@ -3,10 +3,11 @@
 // ============================================================================
 
 #include "AmplitudeFile.h"
-#include "../Core/Common.h"
 
 #include <Engine/Core/Types/String.h>
 #include <Engine/Core/Types/StringView.h>
+
+#include "../Core/Common.h"
 
 namespace AmplitudeAudio
 {
@@ -43,31 +44,31 @@ namespace AmplitudeAudio
     {
         switch (mode)
         {
-        case eFileOpenMode_Write:
-            outFileMode = FileMode::CreateAlways;
-            outAccess   = FileAccess::Write;
-            break;
+            case eFileOpenMode_Write:
+                outFileMode = FileMode::CreateAlways;
+                outAccess   = FileAccess::Write;
+                break;
 
-        case eFileOpenMode_Append:
-            outFileMode = FileMode::OpenAlways;
-            outAccess   = FileAccess::Write;
-            break;
+            case eFileOpenMode_Append:
+                outFileMode = FileMode::OpenAlways;
+                outAccess   = FileAccess::Write;
+                break;
 
-        case eFileOpenMode_ReadWrite:
-            outFileMode = FileMode::CreateAlways;
-            outAccess   = FileAccess::ReadWrite;
-            break;
+            case eFileOpenMode_ReadWrite:
+                outFileMode = FileMode::CreateAlways;
+                outAccess   = FileAccess::ReadWrite;
+                break;
 
-        case eFileOpenMode_ReadAppend:
-            outFileMode = FileMode::OpenAlways;
-            outAccess   = FileAccess::ReadWrite;
-            break;
+            case eFileOpenMode_ReadAppend:
+                outFileMode = FileMode::OpenAlways;
+                outAccess   = FileAccess::ReadWrite;
+                break;
 
-        case eFileOpenMode_Read:
-        default:
-            outFileMode = FileMode::OpenExisting;
-            outAccess   = FileAccess::Read;
-            break;
+            case eFileOpenMode_Read:
+            default:
+                outFileMode = FileMode::OpenExisting;
+                outAccess   = FileAccess::Read;
+                break;
         }
     }
 
@@ -76,15 +77,14 @@ namespace AmplitudeAudio
     // ------------------------------------------------------------------------
 
     AmplitudeFile::AmplitudeFile(const AmOsString& path, eFileOpenMode mode)
-        : m_path(path)
-        , m_handle(nullptr)
+        : m_path(path), m_handle(nullptr)
     {
         FileMode   flaxMode   = FileMode::OpenExisting;
         FileAccess flaxAccess = FileAccess::Read;
         MapOpenMode(mode, flaxMode, flaxAccess);
 
         const ::String flaxPath = AmOsStringToFlaxString(path);
-        m_handle = ::File::Open(flaxPath, flaxMode, flaxAccess);
+        m_handle                = ::File::Open(flaxPath, flaxMode, flaxAccess);
         // m_handle is nullptr when the open fails; IsValid() propagates this.
     }
 
@@ -120,8 +120,8 @@ namespace AmplitudeAudio
         if (m_handle == nullptr || dst == nullptr || bytes == 0)
             return 0;
 
-        uint32 bytesRead = 0;
-        const bool error = m_handle->Read(dst, static_cast<uint32>(bytes), &bytesRead);
+        uint32     bytesRead = 0;
+        const bool error     = m_handle->Read(dst, static_cast<uint32>(bytes), &bytesRead);
         return error ? 0 : static_cast<AmSize>(bytesRead);
     }
 
@@ -153,29 +153,29 @@ namespace AmplitudeAudio
 
         switch (origin)
         {
-        case eFileSeekOrigin_Start:
-            // Clamp negative offsets to zero; uint32 position cannot go negative.
-            targetPosition = (offset >= 0) ? static_cast<uint32>(offset) : 0u;
-            break;
+            case eFileSeekOrigin_Start:
+                // Clamp negative offsets to zero; uint32 position cannot go negative.
+                targetPosition = (offset >= 0) ? static_cast<uint32>(offset) : 0u;
+                break;
 
-        case eFileSeekOrigin_Current:
-        {
-            const int64 current = static_cast<int64>(m_handle->GetPosition());
-            const int64 next    = current + offset;
-            targetPosition = (next >= 0) ? static_cast<uint32>(next) : 0u;
-            break;
-        }
+            case eFileSeekOrigin_Current:
+            {
+                const int64 current = static_cast<int64>(m_handle->GetPosition());
+                const int64 next    = current + offset;
+                targetPosition      = (next >= 0) ? static_cast<uint32>(next) : 0u;
+                break;
+            }
 
-        case eFileSeekOrigin_End:
-        {
-            const int64 end  = static_cast<int64>(m_handle->GetSize());
-            const int64 next = end + offset;
-            targetPosition = (next >= 0) ? static_cast<uint32>(next) : 0u;
-            break;
-        }
+            case eFileSeekOrigin_End:
+            {
+                const int64 end  = static_cast<int64>(m_handle->GetSize());
+                const int64 next = end + offset;
+                targetPosition   = (next >= 0) ? static_cast<uint32>(next) : 0u;
+                break;
+            }
 
-        default:
-            return;
+            default:
+                return;
         }
 
         m_handle->SetPosition(targetPosition);

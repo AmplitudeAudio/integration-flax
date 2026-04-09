@@ -7,10 +7,8 @@
 
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/Platform.h>
-
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
-
-#include <cstring>   // ::memcpy
+#include <cstring> // ::memcpy
 
 namespace AmplitudeAudio
 {
@@ -32,13 +30,13 @@ namespace AmplitudeAudio
 
         // Minimum header alignment so user pointer stays well-aligned.
         constexpr AmSize kHeaderAlignment = 16;
-        constexpr AmSize kHeaderSize = ((sizeof(AllocHeader) + kHeaderAlignment - 1) / kHeaderAlignment) * kHeaderAlignment;
+        constexpr AmSize kHeaderSize      = ((sizeof(AllocHeader) + kHeaderAlignment - 1) / kHeaderAlignment) * kHeaderAlignment;
 
         AmVoidPtr AllocWithHeader(AmSize size, uint64 alignment)
         {
-            const AmSize totalSize = kHeaderSize + size;
+            const AmSize totalSize       = kHeaderSize + size;
             const uint64 actualAlignment = alignment > kHeaderAlignment ? alignment : kHeaderAlignment;
-            auto* raw = static_cast<uint8*>(Platform::Allocate(static_cast<uint64>(totalSize), actualAlignment));
+            auto*        raw             = static_cast<uint8*>(Platform::Allocate(static_cast<uint64>(totalSize), actualAlignment));
             if (raw == nullptr)
                 return nullptr;
             auto* header = reinterpret_cast<AllocHeader*>(raw);
@@ -118,27 +116,27 @@ namespace AmplitudeAudio
 
         switch (level)
         {
-        case eLogMessageLevel_Debug:
-        case eLogMessageLevel_Info:
-        case eLogMessageLevel_Success:
-            LOG_STR(Info, flaxMessage);
-            break;
+            case eLogMessageLevel_Debug:
+            case eLogMessageLevel_Info:
+            case eLogMessageLevel_Success:
+                LOG_STR(Info, flaxMessage);
+                break;
 
-        case eLogMessageLevel_Warning:
-            LOG_STR(Warning, flaxMessage);
-            break;
+            case eLogMessageLevel_Warning:
+                LOG_STR(Warning, flaxMessage);
+                break;
 
-        case eLogMessageLevel_Error:
-            LOG_STR(Error, flaxMessage);
-            break;
+            case eLogMessageLevel_Error:
+                LOG_STR(Error, flaxMessage);
+                break;
 
-        case eLogMessageLevel_Critical:
-            LOG_STR(Fatal, flaxMessage);
-            break;
+            case eLogMessageLevel_Critical:
+                LOG_STR(Fatal, flaxMessage);
+                break;
 
-        default:
-            LOG_STR(Info, flaxMessage);
-            break;
+            default:
+                LOG_STR(Info, flaxMessage);
+                break;
         }
     }
 
@@ -153,14 +151,14 @@ namespace AmplitudeAudio
             CartesianCoordinateSystem::Axis::PositiveZ,
             CartesianCoordinateSystem::Axis::PositiveY);
 
-        const AmVector3 result = { vec.X / 100.0f, vec.Y / 100.0f, vec.Z / 100.0f };
+        const AmVector3 result = {vec.X / 100.0f, vec.Y / 100.0f, vec.Z / 100.0f};
         return CartesianCoordinateSystem::ConvertToDefault(result, flax);
     }
 
     void FlaxTransformToAmplitude(
         const AudioSystemTransform& transform,
-        AmVector3& outLocation,
-        Orientation& outOrientation)
+        AmVector3&                  outLocation,
+        Orientation&                outOrientation)
     {
         outLocation = FlaxVec3ToAmVec3(transform.Position);
 

@@ -15,8 +15,7 @@ namespace AmplitudeAudio
     // ------------------------------------------------------------------------
 
     AmplitudeEntityData::AmplitudeEntityData()
-        : EntityID(0)
-        , HasPosition(false)
+        : EntityID(0), HasPosition(false)
     {
     }
 
@@ -43,9 +42,7 @@ namespace AmplitudeAudio
     // ------------------------------------------------------------------------
 
     AmplitudeEventData::AmplitudeEventData()
-        : EventID(0)
-        , Canceler()
-        , State(PlaybackState::Idle)
+        : EventID(0), Canceler(), State(PlaybackState::Idle)
     {
     }
 
@@ -72,8 +69,7 @@ namespace AmplitudeAudio
     // ------------------------------------------------------------------------
 
     AmplitudeSwitchStateData::AmplitudeSwitchStateData()
-        : SwitchID(0)
-        , StateID(0)
+        : SwitchID(0), StateID(0)
     {
     }
 
@@ -91,8 +87,7 @@ namespace AmplitudeAudio
     // ------------------------------------------------------------------------
 
     AmplitudeBankData::AmplitudeBankData()
-        : BankID(0)
-        , BankFilename(TEXT(""))
+        : BankID(0), BankFilename(TEXT(""))
     {
     }
 

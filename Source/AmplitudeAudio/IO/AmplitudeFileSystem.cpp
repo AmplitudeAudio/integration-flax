@@ -3,14 +3,14 @@
 // ============================================================================
 
 #include "AmplitudeFileSystem.h"
-#include "AmplitudeFile.h"
 
-#include <Engine/Platform/FileSystem.h>
 #include <Engine/Core/Types/String.h>
 #include <Engine/Core/Types/StringView.h>
-
+#include <Engine/Platform/FileSystem.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/IO/Log.h>
+
+#include "AmplitudeFile.h"
 
 namespace AmplitudeAudio
 {
@@ -71,14 +71,14 @@ namespace AmplitudeAudio
         // Treat the path as absolute when it begins with a path separator or
         // contains a Windows-style drive letter (e.g. "C:").
         const AmOsChar firstChar = path.front();
-        const bool isAbsolute =
+        const bool     isAbsolute =
             IsPathSeparator(firstChar) ||
             (path.size() >= 2 && path[1] == AM_OS_STRING(':'));
 
         if (isAbsolute)
             return path;
 
-        return Join({ m_basePath, path });
+        return Join({m_basePath, path});
     }
 
     bool AmplitudeFileSystem::Exists(const AmOsString& path) const
@@ -99,8 +99,8 @@ namespace AmplitudeAudio
         if (parts.empty())
             return AmOsString{};
 
-        const AmOsChar sep = PathSeparator();
-        AmOsString result  = parts[0];
+        const AmOsChar sep    = PathSeparator();
+        AmOsString     result = parts[0];
 
         for (std::size_t i = 1; i < parts.size(); ++i)
         {
@@ -108,8 +108,8 @@ namespace AmplitudeAudio
             if (part.empty())
                 continue;
 
-            const bool resultEnds  = !result.empty() && IsPathSeparator(result.back());
-            const bool partStarts  = IsPathSeparator(part.front());
+            const bool resultEnds = !result.empty() && IsPathSeparator(result.back());
+            const bool partStarts = IsPathSeparator(part.front());
 
             if (!resultEnds && !partStarts)
             {
