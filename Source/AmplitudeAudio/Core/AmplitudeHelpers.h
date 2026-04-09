@@ -1,3 +1,17 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     `http://www.apache.org/licenses/LICENSE-2.0`
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 // ============================================================================
@@ -27,34 +41,36 @@ namespace AmplitudeAudio
     //  FlaxMemoryAllocator
     // ========================================================================
 
-    /// \brief Amplitude MemoryAllocator implementation backed by Flax Platform APIs.
-    ///
+    /// <summary>Amplitude MemoryAllocator implementation backed by Flax Platform APIs.</summary>
+    /// <remarks>
     /// All Amplitude memory-pool kinds are routed to the same underlying
     /// Flax allocator; the pool parameter is ignored for routing but is
     /// available for future diagnostic use.
+    /// </remarks>
     class FlaxMemoryAllocator final : public MemoryAllocator
     {
       public:
-        /// Allocates \p size bytes from the given Amplitude pool.
+        /// <summary>Allocates <paramref name="size"/> bytes from the given Amplitude pool.</summary>
         AmVoidPtr Malloc(eMemoryPoolKind pool, AmSize size) override;
 
-        /// Reallocates an existing allocation to the new \p size.
+        /// <summary>Reallocates an existing allocation to the new <paramref name="size"/>.</summary>
         AmVoidPtr Realloc(eMemoryPoolKind pool, AmVoidPtr address, AmSize size) override;
 
-        /// Allocates \p size bytes with the requested \p alignment.
+        /// <summary>Allocates <paramref name="size"/> bytes with the requested <paramref name="alignment"/>.</summary>
         AmVoidPtr Malign(eMemoryPoolKind pool, AmSize size, AmUInt32 alignment) override;
 
-        /// Reallocates an existing aligned allocation to the new \p size and \p alignment.
+        /// <summary>Reallocates an existing aligned allocation to the new <paramref name="size"/> and <paramref name="alignment"/>.</summary>
         AmVoidPtr Realign(eMemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment) override;
 
-        /// Frees a previously allocated block.
+        /// <summary>Frees a previously allocated block.</summary>
         void Free(eMemoryPoolKind pool, AmVoidPtr address) override;
 
-        /// Returns the usable size of the block at \p address.
-        ///
-        /// \note Flax's Platform API does not expose a size-query; this
+        /// <summary>Returns the usable size of the block at <paramref name="address"/>.</summary>
+        /// <remarks>
+        /// Note: Flax's Platform API does not expose a size-query; this
         ///       implementation always returns 0.  Amplitude only uses
         ///       SizeOf for diagnostic/stats purposes, so returning 0 is safe.
+        /// </remarks>
         AmSize SizeOf(eMemoryPoolKind pool, AmVoidPtr address) override;
     };
 
@@ -62,13 +78,14 @@ namespace AmplitudeAudio
     //  FlaxLogger
     // ========================================================================
 
-    /// \brief Amplitude Logger implementation that writes to Flax's log system.
-    ///
+    /// <summary>Amplitude Logger implementation that writes to Flax's log system.</summary>
+    /// <remarks>
     /// Level mapping:
     ///   Debug / Info / Success -> LogType::Info
     ///   Warning                -> LogType::Warning
     ///   Error                  -> LogType::Error
     ///   Critical               -> LogType::Fatal
+    /// </remarks>
     class FlaxLogger final : public Logger
     {
       protected:
@@ -79,18 +96,20 @@ namespace AmplitudeAudio
     //  Coordinate conversion helpers
     // ========================================================================
 
-    /// \brief Converts a Flax Vector3 to an Amplitude AmVector3.
-    ///
+    /// <summary>Converts a Flax Vector3 to an Amplitude AmVector3.</summary>
+    /// <remarks>
     /// Both types use the same XYZ component layout, so this is a straight
     /// component-wise copy.
+    /// </remarks>
     AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
 
-    /// \brief Converts an AudioSystemTransform to an Amplitude location and orientation.
-    ///
-    /// \param[in]  transform   The Flax AudioSystem spatial transform.
-    /// \param[out] outLocation The world-space position expressed as AmVector3.
-    /// \param[out] outOrientation The orientation built from the transform's
+    /// <summary>Converts an AudioSystemTransform to an Amplitude location and orientation.</summary>
+    /// <param name="transform">The Flax AudioSystem spatial transform.</param>
+    /// <param name="outLocation">The world-space position expressed as AmVector3.</param>
+    /// <param name="outOrientation">
+    /// The orientation built from the transform's
     ///             forward and up unit vectors.
+    /// </param>
     void FlaxTransformToAmplitude(
         const AudioSystemTransform& transform,
         AmVector3&                  outLocation,

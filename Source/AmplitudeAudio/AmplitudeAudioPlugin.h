@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     `http://www.apache.org/licenses/LICENSE-2.0`
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,8 +29,8 @@ namespace AmplitudeAudio
     class AmplitudeMiddleware;
 }
 
-/// \brief Main entry point for the Amplitude Audio Flax plugin.
-///
+/// <summary>Main entry point for the Amplitude Audio Flax plugin.</summary>
+/// <remarks>
 /// Flax calls Initialize() after all modules are loaded and Deinitialize()
 /// before they are unloaded. The plugin owns the AmplitudeMiddleware instance
 /// and is responsible for registering and unregistering it with the AudioSystem.
@@ -38,6 +38,7 @@ namespace AmplitudeAudio
 /// Configuration is loaded from a well-known JSON asset at
 /// Content/Sounds/Amplitude/Config.json. This asset must contain per-platform
 /// profiles with InitSoundBank and EngineConfigFile entries.
+/// </remarks>
 API_CLASS()
 class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
 {
@@ -48,14 +49,16 @@ class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
     //  GamePlugin overrides
     // ========================================================================
 
-    /// \brief Creates the AmplitudeMiddleware instance, loads configuration,
+    /// <summary>
+    /// Creates the AmplitudeMiddleware instance, loads configuration,
     ///        and starts the AudioSystem.
+    /// </summary>
     void Initialize() override;
 
-    /// \brief Unregisters and destroys the AmplitudeMiddleware instance.
+    /// <summary>Unregisters and destroys the AmplitudeMiddleware instance.</summary>
     void Deinitialize() override;
 
   private:
-    /// Owned middleware instance. Created in Initialize(), destroyed in Deinitialize().
+    /// <summary>Owned middleware instance. Created in Initialize(), destroyed in Deinitialize().</summary>
     AmplitudeAudio::AmplitudeMiddleware* _middleware = nullptr;
 };

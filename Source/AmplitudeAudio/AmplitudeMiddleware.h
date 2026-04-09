@@ -1,3 +1,17 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     `http://www.apache.org/licenses/LICENSE-2.0`
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 // ============================================================================
@@ -22,9 +36,8 @@ namespace AmplitudeAudio
 {
     class AmplitudeFileSystem;
 
-    /// \brief Concrete AudioMiddleware backed by the Amplitude Audio SDK.
-    ///
-    /// Lifecycle: LoadConfiguration -> Startup -> Update loop -> Shutdown -> Release.
+    /// <summary>Concrete AudioMiddleware backed by the Amplitude Audio SDK.</summary>
+    /// <remarks>Lifecycle: LoadConfiguration -> Startup -> Update loop -> Shutdown -> Release.</remarks>
     class AmplitudeMiddleware final : public AudioMiddleware
     {
       public:
@@ -156,22 +169,22 @@ namespace AmplitudeAudio
         void ReleaseTrackedBankReference(AudioSystemBankData* data);
         void ReleaseTrackedBankReference(const String& filename);
 
-        /// Amplitude Engine singleton (obtained via Engine::GetInstance()).
+        /// <summary>Amplitude Engine singleton (obtained via Engine::GetInstance()).</summary>
         SparkyStudios::Audio::Amplitude::Engine* m_pEngine;
 
-        /// Custom file system bridging Flax I/O to Amplitude.
+        /// <summary>Custom file system bridging Flax I/O to Amplitude.</summary>
         std::shared_ptr<AmplitudeFileSystem> m_pFileSystem;
 
-        /// Per-platform configuration profiles loaded from JSON.
+        /// <summary>Per-platform configuration profiles loaded from JSON.</summary>
         AmplitudeAssetProfiles m_profiles;
 
-        /// Shared runtime load state keyed by sound-bank filename.
+        /// <summary>Shared runtime load state keyed by sound-bank filename.</summary>
         Dictionary<String, LoadedBankState> m_loadedBanksByFilename;
 
-        /// Wrapper-to-filename ownership map used to keep per-wrapper loads idempotent.
+        /// <summary>Wrapper-to-filename ownership map used to keep per-wrapper loads idempotent.</summary>
         Dictionary<const AudioSystemBankData*, String> m_loadedBankFilenames;
 
-        /// Whether Startup() completed successfully.
+        /// <summary>Whether Startup() completed successfully.</summary>
         bool m_bInitialized;
     };
 

@@ -1,3 +1,17 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     `http://www.apache.org/licenses/LICENSE-2.0`
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // ============================================================================
 //  AmplitudeControlsGenerator — Editor-only audio controls discovery
 //  (implementation)
@@ -26,8 +40,10 @@
 
 namespace
 {
-    /// Parses a JSON file at \p path and returns the root document.
+    /// <summary>
+    /// Parses a JSON file at <paramref name="path"/> and returns the root document.
     /// Returns false if the file could not be read or parsed.
+    /// </summary>
     bool ParseJsonFile(const String& path, rapidjson_flax::Document& outDoc)
     {
         StringAnsi content;
@@ -38,8 +54,10 @@ namespace
         return !outDoc.HasParseError() && outDoc.IsObject();
     }
 
+    /// <summary>
     /// Extracts the filename without extension from a full path.
     /// e.g. "/foo/bar/play_throw.json" -> "play_throw"
+    /// </summary>
     String FileNameStem(const String& path)
     {
         // Find last separator.
@@ -55,7 +73,7 @@ namespace
         return (dot >= 0) ? filename.Substring(0, dot) : filename;
     }
 
-    /// Scans a directory for .json files (non-recursive) and returns their paths.
+    /// <summary>Scans a directory for .json files (non-recursive) and returns their paths.</summary>
     void ListJsonFiles(const String& dir, Array<String>& outPaths)
     {
         if (!FileSystem::DirectoryExists(dir))

@@ -1,3 +1,17 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     `http://www.apache.org/licenses/LICENSE-2.0`
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // ============================================================================
 //  AmplitudeFileSystem — implementation
 // ============================================================================
@@ -18,13 +32,14 @@ namespace AmplitudeAudio
     //  Internal helpers — convert AmOsString to Flax String
     // ------------------------------------------------------------------------
 
-    /// Converts an AmOsString to a Flax String for use with Flax platform APIs.
-    ///
+    /// <summary>Converts an AmOsString to a Flax String for use with Flax platform APIs.</summary>
+    /// <remarks>
     /// Flax's Char type can be char16_t (Unix) or wchar_t (Windows), so we
     /// cannot safely pass a wchar_t* to the Flax String constructor on all
     /// platforms.  We always route through StringAnsi: on wchar platforms the
     /// wide AmOsString (std::wstring) is narrowed first via the Amplitude SDK
     /// helper macro, then wrapped in StringAnsi for the Flax String constructor.
+    /// </remarks>
     static ::String AmOsStringToFlaxString(const AmOsString& path)
     {
 #if defined(AM_WCHAR_SUPPORTED)

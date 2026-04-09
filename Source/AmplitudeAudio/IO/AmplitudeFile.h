@@ -1,3 +1,17 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     `http://www.apache.org/licenses/LICENSE-2.0`
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #pragma once
 
 // ============================================================================
@@ -16,56 +30,56 @@ namespace AmplitudeAudio
 {
     using namespace SparkyStudios::Audio::Amplitude;
 
-    /// \brief Amplitude File implementation backed by Flax platform file I/O.
-    ///
+    /// <summary>Amplitude File implementation backed by Flax platform file I/O.</summary>
+    /// <remarks>
     /// The constructor opens the file immediately using Flax's ::File::Open().
     /// IsValid() returns false if the open failed or the file was already closed.
+    /// </remarks>
     class AmplitudeFile final : public SparkyStudios::Audio::Amplitude::File
     {
       public:
-        /// \brief Opens the file at \p path with the given Amplitude open \p mode.
-        ///
-        /// \param path  Amplitude OS string path to the file on disk.
-        /// \param mode  Amplitude file open mode (read, write, append, etc.).
+        /// <summary>Opens the file at <paramref name="path"/> with the given Amplitude open <paramref name="mode"/>.</summary>
+        /// <param name="path">Amplitude OS string path to the file on disk.</param>
+        /// <param name="mode">Amplitude file open mode (read, write, append, etc.).</param>
         AmplitudeFile(const AmOsString& path, eFileOpenMode mode);
 
-        /// \brief Closes the underlying file handle on destruction.
+        /// <summary>Closes the underlying file handle on destruction.</summary>
         ~AmplitudeFile() override;
 
         // ====================================================================
         //  File interface
         // ====================================================================
 
-        /// Returns the path this file was opened with.
+        /// <summary>Returns the path this file was opened with.</summary>
         [[nodiscard]] AmOsString GetPath() const override;
 
-        /// Returns true when the read/write position has reached the end of file.
+        /// <summary>Returns true when the read/write position has reached the end of file.</summary>
         [[nodiscard]] bool Eof() const override;
 
-        /// Reads up to \p bytes from the current position into \p dst.
-        /// \return Number of bytes actually read.
+        /// <summary>Reads up to <paramref name="bytes"/> from the current position into <paramref name="dst"/>.</summary>
+        /// <returns>Number of bytes actually read.</returns>
         AmSize Read(AmUInt8Buffer dst, AmSize bytes) const override;
 
-        /// Writes \p bytes from \p src at the current position.
-        /// \return Number of bytes actually written.
+        /// <summary>Writes <paramref name="bytes"/> from <paramref name="src"/> at the current position.</summary>
+        /// <returns>Number of bytes actually written.</returns>
         AmSize Write(AmConstUInt8Buffer src, AmSize bytes) override;
 
-        /// Returns the total size of the file in bytes.
+        /// <summary>Returns the total size of the file in bytes.</summary>
         [[nodiscard]] AmSize Length() const override;
 
-        /// Seeks to the given \p offset relative to \p origin.
+        /// <summary>Seeks to the given <paramref name="offset"/> relative to <paramref name="origin"/>.</summary>
         void Seek(AmInt64 offset, eFileSeekOrigin origin) override;
 
-        /// Returns the current read/write cursor position.
+        /// <summary>Returns the current read/write cursor position.</summary>
         [[nodiscard]] AmSize Position() const override;
 
-        /// Returns the raw ::FileBase pointer, or nullptr if not open.
+        /// <summary>Returns the raw ::FileBase pointer, or nullptr if not open.</summary>
         [[nodiscard]] AmVoidPtr GetPtr() const override;
 
-        /// Returns true if the file handle is valid and open.
+        /// <summary>Returns true if the file handle is valid and open.</summary>
         [[nodiscard]] bool IsValid() const override;
 
-        /// Closes the file and releases the handle.
+        /// <summary>Closes the file and releases the handle.</summary>
         void Close() override;
 
       private:
