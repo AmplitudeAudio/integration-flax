@@ -15,7 +15,7 @@
 #pragma once
 
 // ============================================================================
-//  AudioControlsComponent — Flax component for loading AudioControlCollections
+//  AudioControlsScript — Flax component for loading AudioControlCollections
 //
 //  Attaches an AudioControlCollection JSON asset to an actor. When
 //  AutoLoad is true the collection is registered with the AudioSystem on

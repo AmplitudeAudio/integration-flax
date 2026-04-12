@@ -22,12 +22,12 @@ using FlaxEngine.GUI;
 namespace AmplitudeAudioEditor
 {
     /// <summary>
-    /// Custom editor for AudioControlsComponent that adds a "Reload Controls"
+    /// Custom editor for AudioControlsScript that adds a "Reload Controls"
     /// button. The button scans the Amplitude project directory for audio
     /// control definitions and writes them to the configured asset path.
     /// </summary>
-    [CustomEditor(typeof(AudioControlsComponent)), DefaultEditor]
-    public class AudioControlsComponentEditor : GenericEditor
+    [CustomEditor(typeof(AudioControlsScript)), DefaultEditor]
+    public class AudioControlsScriptEditor : GenericEditor
     {
         /// <inheritdoc />
         public override void Initialize(LayoutElementsContainer layout)
@@ -52,30 +52,30 @@ namespace AmplitudeAudioEditor
 
                 if (string.IsNullOrWhiteSpace(projectPath))
                 {
-                    Debug.LogWarning("[AudioControlsComponentEditor] ProjectSourcesPath is not configured. " +
+                    Debug.LogWarning("[AudioControlsScriptEditor] ProjectSourcesPath is not configured. " +
                                      "Set it in the Amplitude Configuration asset (Config.json).");
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(outputPath))
                 {
-                    Debug.LogWarning("[AudioControlsComponentEditor] Output asset path is empty.");
+                    Debug.LogWarning("[AudioControlsScriptEditor] Output asset path is empty.");
                     return;
                 }
 
                 var success = AmplitudeControlsGenerator.ReloadControls(projectPath, outputPath);
                 if (success)
                 {
-                    Debug.Log($"[AudioControlsComponentEditor] Controls reloaded to: {outputPath}");
+                    Debug.Log($"[AudioControlsScriptEditor] Controls reloaded to: {outputPath}");
 
                     // Auto-fill the component's ControlsAssetPath with the output path.
                     foreach (var value in Values)
-                        if (value is AudioControlsComponent component)
+                        if (value is AudioControlsScript component)
                             component.ControlsAssetPath = outputPath;
                 }
                 else
                 {
-                    Debug.LogError("[AudioControlsComponentEditor] Failed to reload controls.");
+                    Debug.LogError("[AudioControlsScriptEditor] Failed to reload controls.");
                 }
             };
         }

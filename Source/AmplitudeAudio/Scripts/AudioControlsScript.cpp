@@ -249,7 +249,7 @@ void AudioControlsScript::Load()
 }
 
 // ============================================================================
-//  AudioControlsComponent — Unload
+//  AudioControlsScript — Unload
 // ============================================================================
 
 void AudioControlsScript::Unload()

@@ -13,7 +13,7 @@ Welcome to the official **Amplitude Audio SDK** integration plugin for the [Flax
 - **AudioSystem Middleware Integration**: Implements the custom `AudioSystem` middleware interface, intercepting and processing audio calls through the Amplitude Audio SDK.
 - **Flax-Native Subsystems**: Routes Amplitude's internal memory allocation, logging, and file I/O operations through Flax's high-performance native APIs (`FlaxMemoryAllocator`, `FlaxLogger`, and `AmplitudeFileSystem`).
 - **Audio Controls Script**: Easily manage your audio at runtime using the `AudioControlsScript`. Attach it to any actor to automatically load/unload `AudioControlCollection` JSON assets based on the actor's lifecycle.
-- **Editor Extensions**: Custom editor integrations (like the `AudioControlsComponentEditor`) to quickly reload and manage audio controls directly from the Flax Editor.
+- **Editor Extensions**: Custom editor integrations (like the `AudioControlsScriptEditor`) to quickly reload and manage audio controls directly from the Flax Editor.
 
 ## Installation
 
@@ -84,7 +84,7 @@ To load an `AudioControlCollection` at runtime:
 
 ### Reloading Controls in Editor
 
-The plugin includes a custom editor extension. When selecting an Actor with an `AudioControlsComponent`, you will see a **"Reload Controls"** button. This button scans your Amplitude project directory and writes the updated control definitions to your configured asset path.
+The plugin includes a custom editor extension. When selecting an Actor with an `AudioControlsScript`, you will see a **"Reload Controls"** button. This button scans your Amplitude project directory and writes the updated control definitions to your configured asset path.
 
 ## License
 
