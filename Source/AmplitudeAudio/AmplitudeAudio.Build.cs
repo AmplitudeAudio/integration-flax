@@ -109,24 +109,30 @@ public class AmplitudeAudio : GameModule
         }
 
         // Map Flax architecture to Amplitude SDK architecture name
-        string sdkArch;
-        switch (options.Architecture)
+        var sdkArch = (options.Platform.Target, options.Architecture) switch
         {
-            case TargetArchitecture.x64:
-                sdkArch = "x86_64";
-                break;
-            case TargetArchitecture.x86:
-                sdkArch = "i386";
-                break;
-            case TargetArchitecture.ARM64:
-                sdkArch = "arm64";
-                break;
-            case TargetArchitecture.ARM:
-                sdkArch = "armv7";
-                break;
-            default:
-                Log.Error($"Amplitude Audio SDK does not support architecture: {options.Architecture}");
-                return;
+            (TargetPlatform.Windows, TargetArchitecture.x64) => "x64",
+            (TargetPlatform.Windows, TargetArchitecture.x86) => "x86",
+            (TargetPlatform.Windows, TargetArchitecture.ARM64) => "arm64",
+            (TargetPlatform.Linux, TargetArchitecture.x64) => "x86_64",
+            (TargetPlatform.Linux, TargetArchitecture.x86) => "i386",
+            (TargetPlatform.Linux, TargetArchitecture.ARM64) => "arm64-v8a",
+            (TargetPlatform.Linux, TargetArchitecture.ARM) => "armv7",
+            (TargetPlatform.Mac, TargetArchitecture.x64) => "x86_64",
+            (TargetPlatform.Mac, TargetArchitecture.ARM64) => "arm64",
+            (TargetPlatform.iOS, TargetArchitecture.ARM64) => "arm64",
+            (TargetPlatform.iOS, TargetArchitecture.x64) => "x86_64",
+            (TargetPlatform.Android, TargetArchitecture.ARM64) => "arm64-v8a",
+            (TargetPlatform.Android, TargetArchitecture.ARM) => "armeabi-v7a",
+            (TargetPlatform.Android, TargetArchitecture.x64) => "x86_64",
+            (TargetPlatform.Android, TargetArchitecture.x86) => "x86",
+            _ => null,
+        };
+
+        if (sdkArch == null)
+        {
+            Log.Error($"Amplitude Audio SDK does not support architecture {options.Architecture} on {options.Platform.Target}.");
+            return;
         }
 
         // Use debug library for Debug and Development configurations, release for Release
