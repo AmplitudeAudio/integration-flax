@@ -12,16 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ============================================================================
-//  AmplitudeMiddleware — Core AudioMiddleware implementation
-//  (implementation)
-//
-//  Implements all 48 methods of the AudioMiddleware interface by delegating
-//  to the Amplitude Audio SDK Engine singleton.
-// ============================================================================
-
 #include "AmplitudeMiddleware.h"
 
+#include <Engine/Content/AssetReference.h>
 #include <Engine/Content/Content.h>
 #include <Engine/Content/JsonAsset.h>
 #include <Engine/Core/Log.h>
@@ -30,14 +23,14 @@
 #include <Engine/Platform/FileSystem.h>
 #include <Engine/Platform/StringUtils.h>
 #include <Engine/Serialization/Serialization.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <chrono>
 #include <thread>
 
-#include "Core/AmplitudeAudioData.h"
-#include "Core/AmplitudeHelpers.h"
-#include "Core/Common.h"
-#include "IO/AmplitudeFileSystem.h"
+#include <AmplitudeAudio/Core/Data.h>
+#include <AmplitudeAudio/Core/Helpers.h>
+#include <AmplitudeAudio/Core/Common.h>
+#include <AmplitudeAudio/IO/FlaxFileSystem.h>
+#include <AmplitudeAudio/IO/FlaxLogger.h>
 
 namespace AmplitudeAudio
 {
@@ -77,13 +70,17 @@ namespace AmplitudeAudio
             {
                 m_pEngine->StartCloseFileSystem();
                 if (!PollWithTimeout([this]()
-                                     { return m_pEngine->TryFinalizeCloseFileSystem(); }))
+                {
+                    return m_pEngine->TryFinalizeCloseFileSystem();
+                }))
                     LOG(Warning, "AmplitudeMiddleware: Timed out closing file system");
             }
         }
 
         if (unregisterExtensions)
             AmEngine::UnregisterDefaultExtensions();
+
+        Logger::SetLogger(nullptr);
 
         AmEngine::DestroyInstance();
         m_pFileSystem.reset();
@@ -110,9 +107,10 @@ namespace AmplitudeAudio
             if (m_pEngine != nullptr)
             {
                 m_pEngine->OnNextFrame([this, filename](AmTime dt)
-                                       {
+                {
                     const StringAnsi filenameAnsi(filename.Get(), filename.Length());
-                    m_pEngine->UnloadSoundBank(AM_STRING_TO_OS_STRING(filenameAnsi.Get())); });
+                    m_pEngine->UnloadSoundBank(AM_STRING_TO_OS_STRING(filenameAnsi.Get()));
+                });
             }
 
             m_loadedBanksByFilename.Remove(filename);
@@ -151,10 +149,6 @@ namespace AmplitudeAudio
         m_bInitialized = false;
     }
 
-    // ========================================================================
-    //  Construction / Destruction
-    // ========================================================================
-
     AmplitudeMiddleware::AmplitudeMiddleware()
         : m_pEngine(nullptr), m_pFileSystem(nullptr), m_profiles(), m_loadedBanksByFilename(), m_loadedBankFilenames(), m_bInitialized(false)
     {
@@ -168,47 +162,23 @@ namespace AmplitudeAudio
         Release();
     }
 
-    // ========================================================================
-    //  Lifecycle (6)
-    // ========================================================================
-
     bool AmplitudeMiddleware::LoadConfiguration(StringView configFile)
     {
-        // Load the JSON asset from the Flax content system.
-        const auto asset = Content::Load<JsonAsset>(configFile);
-        if (asset == nullptr)
+        // Configuration is stored in the native Flax game settings
+        // (AmplitudeSettings). The configFile parameter is retained
+        // for interface compatibility but is no longer used.
+        (void)configFile;
+
+        const AmplitudeSettings* settings = AmplitudeSettings::Get();
+        if (settings == nullptr)
         {
-            LOG(Error, "AmplitudeMiddleware: Failed to load configuration asset: {0}", String(configFile));
+            LOG(Error, "AmplitudeMiddleware: Failed to get Amplitude Configuration settings. "
+                "Add it via Settings > Game Settings.");
             return false;
         }
 
-        if (asset->WaitForLoaded())
-        {
-            LOG(Error, "AmplitudeMiddleware: Configuration asset failed to load: {0}", String(configFile));
-            return false;
-        }
-
-        if (asset->Data == nullptr)
-        {
-            LOG(Error, "AmplitudeMiddleware: Configuration asset has no data: {0}", String(configFile));
-            return false;
-        }
-
-        // Deserialize configuration directly from the JSON Data node.
-        Array<AmplitudePlatformProfile> profiles;
-        String                          projectBuildPath;
-        String                          projectSourcesPath;
-
-        {
-            auto&               stream   = *asset->Data;
-            ISerializeModifier* modifier = nullptr;
-            DESERIALIZE_MEMBER(Profiles, profiles);
-            DESERIALIZE_MEMBER(ProjectBuildPath, projectBuildPath);
-            DESERIALIZE_MEMBER(ProjectSourcesPath, projectSourcesPath);
-        }
-
-        // Populate the internal profiles map.
-        m_profiles.LoadFromAsset(profiles, projectBuildPath, projectSourcesPath);
+        // Populate the internal profiles map from the settings singleton.
+        m_profiles.LoadFromSettings(settings->Profiles, settings->ProjectBuildPath, settings->ProjectSourcesPath);
 
         // Validate that a profile exists for the current platform.
         const String                  platform = AmplitudeAssetProfiles::GetCurrentPlatform();
@@ -266,7 +236,7 @@ namespace AmplitudeAudio
 
         // 4. Create and configure the custom file system.
         //    Base path = {kAssetBasePath}/{ProjectBuildPath}
-        m_pFileSystem           = std::make_shared<AmplitudeFileSystem>();
+        m_pFileSystem           = std::make_shared<FlaxFileSystem>();
         const String& buildPath = m_profiles.GetProjectBuildPath();
         String        basePath  = String(kAssetBasePath);
         if (!buildPath.IsEmpty())
@@ -289,7 +259,9 @@ namespace AmplitudeAudio
         m_pEngine->StartOpenFileSystem();
         closeFileSystemOnFailure = true;
         if (!PollWithTimeout([this]()
-                             { return m_pEngine->TryFinalizeOpenFileSystem(); }))
+        {
+            return m_pEngine->TryFinalizeOpenFileSystem();
+        }))
         {
             return failStartup(TEXT("AmplitudeMiddleware: Timed out opening file system"));
         }
@@ -316,7 +288,9 @@ namespace AmplitudeAudio
 
             m_pEngine->StartLoadSoundFiles();
             if (!PollWithTimeout([this]()
-                                 { return m_pEngine->TryFinalizeLoadSoundFiles(); }))
+            {
+                return m_pEngine->TryFinalizeLoadSoundFiles();
+            }))
             {
                 return failStartup(TEXT("AmplitudeMiddleware: Timed out loading init sound bank files"));
             }
@@ -369,10 +343,6 @@ namespace AmplitudeAudio
         m_pEngine->StopAll();
     }
 
-    // ========================================================================
-    //  DeployFiles (editor only)
-    // ========================================================================
-
 #if USE_EDITOR
     bool AmplitudeMiddleware::DeployFiles(const StringView& outputPath)
     {
@@ -415,16 +385,18 @@ namespace AmplitudeAudio
             const String destFileDir = String(StringUtils::GetDirectoryName(destFile));
             if (!::FileSystem::DirectoryExists(destFileDir))
             {
+                // Flax FileSystem::CreateDirectory returns TRUE on failure.
                 if (::FileSystem::CreateDirectory(destFileDir))
                 {
-                    LOG(Warning, "[AmplitudeMiddleware] DeployFiles: could not create directory: {0}", destFileDir);
+                    LOG(Error, "[AmplitudeMiddleware] DeployFiles: could not create directory: {0}", destFileDir);
                     continue;
                 }
             }
 
+            // Flax FileSystem::CopyFile returns TRUE on failure.
             if (::FileSystem::CopyFile(destFile, srcFile))
             {
-                LOG(Warning, "[AmplitudeMiddleware] DeployFiles: failed to copy: {0}", srcFile);
+                LOG(Error, "[AmplitudeMiddleware] DeployFiles: failed to copy: {0}", srcFile);
                 continue;
             }
 
@@ -436,21 +408,15 @@ namespace AmplitudeAudio
     }
 #endif
 
-    // ========================================================================
-    //  Entity (8)
-    // ========================================================================
-
     AudioSystemEntityData* AmplitudeMiddleware::CreateWorldEntity(AudioSystemDataID id)
     {
+        // The ATL drives AddEntity for ALL entity kinds (including the world
+        // entity) immediately after CreateWorldEntity returns, so this method
+        // only allocates the wrapper. Registering here too would produce a
+        // double AmEngine::AddEntity for the world entity.
         auto* entityData        = New<AmplitudeEntityData>();
         entityData->EntityID    = static_cast<AmEntityID>(id);
         entityData->HasPosition = false;
-
-        if (m_bInitialized)
-        {
-            m_pEngine->AddEntity(entityData->EntityID);
-        }
-
         return entityData;
     }
 
@@ -533,18 +499,14 @@ namespace AmplitudeAudio
         if (!entity.Valid())
             return false;
 
-        AmVector3   location{0.f, 0.f, 0.f};
-        Orientation orientation(0.0f, 0.0f, 0.0f);
+        AmVector3   location    = kVector3Zero;
+        Orientation orientation = Orientation::Zero();
         FlaxTransformToAmplitude(transform, location, orientation);
 
         entity.SetLocation(location);
         entity.SetOrientation(orientation);
         return true;
     }
-
-    // ========================================================================
-    //  Listener (6)
-    // ========================================================================
 
     AudioSystemListenerData* AmplitudeMiddleware::CreateListenerData(AudioSystemDataID id, bool isDefault)
     {
@@ -574,7 +536,7 @@ namespace AmplitudeAudio
 
         if (listenerData->IsDefault)
         {
-            m_pEngine->SetDefaultListener(&listener);
+            m_pEngine->SetDefaultListener(listener.GetId());
             LOG(Info, "AmplitudeMiddleware: Set default listener to ID: {0}", id);
         }
 
@@ -592,9 +554,8 @@ namespace AmplitudeAudio
             return false;
 
         // Reset to origin with default orientation.
-        const AmVector3 origin = {0.0f, 0.0f, 0.0f};
-        listener.SetLocation(origin);
-        listener.SetOrientation(Orientation(0.0f, 0.0f, 0.0f));
+        listener.SetLocation(kVector3Zero);
+        listener.SetOrientation(Orientation::Zero());
         return true;
     }
 
@@ -605,7 +566,7 @@ namespace AmplitudeAudio
 
         auto* listenerData = static_cast<AmplitudeListenerData*>(data);
         if (listenerData->IsDefault)
-            m_pEngine->SetDefaultListener(static_cast<const Listener*>(nullptr));
+            m_pEngine->SetDefaultListener(nullptr);
 
         m_pEngine->RemoveListener(listenerData->ListenerID);
         return true;
@@ -622,18 +583,14 @@ namespace AmplitudeAudio
         if (!listener.Valid())
             return false;
 
-        AmVector3   location{0.0f, 0.0f, 0.0f};
-        Orientation orientation(0.0f, 0.0f, 0.0f);
+        AmVector3   location    = kVector3Zero;
+        Orientation orientation = Orientation::Zero();
         FlaxTransformToAmplitude(transform, location, orientation);
 
         listener.SetLocation(location);
         listener.SetOrientation(orientation);
         return true;
     }
-
-    // ========================================================================
-    //  Event (3)
-    // ========================================================================
 
     AudioSystemEventData* AmplitudeMiddleware::CreateEventData(AudioSystemDataID id)
     {
@@ -655,21 +612,12 @@ namespace AmplitudeAudio
         Delete(static_cast<AmplitudeEventData*>(data));
     }
 
-    // ========================================================================
-    //  Trigger (5)
-    // ========================================================================
-
-    bool AmplitudeMiddleware::LoadTrigger(
-        AudioSystemDataID entityId, AudioSystemTriggerData* triggerData, AudioSystemEventData* eventData)
+    bool AmplitudeMiddleware::LoadTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData)
     {
         if (!m_bInitialized)
             return false;
 
         auto* amTrigger = static_cast<AmplitudeTriggerData*>(triggerData);
-        auto* amEvent   = static_cast<AmplitudeEventData*>(eventData);
-
-        // Store the event ID from the trigger so we can look up the handle later.
-        amEvent->EventID = amTrigger->EventID;
 
         // Verify the event handle exists in the engine.
         const EventHandle handle = m_pEngine->GetEventHandle(amTrigger->EventID);
@@ -699,6 +647,9 @@ namespace AmplitudeAudio
             return false;
         }
 
+        // Bind the event instance to the trigger's event asset before firing.
+        amEvent->EventID = amTrigger->EventID;
+
         // Trigger the event on the entity.
         const EventCanceler canceler = m_pEngine->Trigger(amTrigger->EventID, entity);
         amEvent->Canceler            = canceler;
@@ -706,19 +657,46 @@ namespace AmplitudeAudio
         return true;
     }
 
-    bool AmplitudeMiddleware::UnloadTrigger(
-        AudioSystemDataID entityId, AudioSystemTriggerData* triggerData, AudioSystemEventData* eventData)
+    bool AmplitudeMiddleware::ActivateTriggerMulti(
+        AudioSystemDataID entityId, AudioSystemTriggerData* triggerData,
+        const Array<TriggerLocationEntry>& locations, AudioSystemMultiPositionBehavior behavior)
     {
         if (!m_bInitialized)
             return false;
 
-        auto* amEvent = static_cast<AmplitudeEventData*>(eventData);
+        auto* amTrigger = static_cast<AmplitudeTriggerData*>(triggerData);
 
-        // Clear the event reference; the event handle itself is owned by the engine.
-        amEvent->EventID  = 0;
-        amEvent->Canceler = EventCanceler();
-        amEvent->State    = PlaybackState::Idle;
+        // Look up the entity in the engine.
+        const Entity entity = m_pEngine->GetEntity(static_cast<AmEntityID>(entityId));
+        if (!entity.Valid())
+        {
+            LOG(Error, "AmplitudeMiddleware: Cannot activate trigger multi - entity {0} not found", entityId);
+            return false;
+        }
+
+        // Trigger the event at each location.
+        for (int32 i = 0; i < locations.Count(); ++i)
+        {
+            const TriggerLocationEntry& loc = locations[i];
+
+            // Set the entity position to this location before triggering.
+            AudioSystemTransform transform;
+            transform.Position = loc.Position;
+            SetEntityTransform(entityId, nullptr, transform);
+
+            // Trigger the event at this position.
+            m_pEngine->Trigger(amTrigger->EventID, entity);
+        }
+
         return true;
+    }
+
+    bool AmplitudeMiddleware::UnloadTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData)
+    {
+        // Amplitude does not expose a per-trigger unload — bank-level unload is handled
+        // by UnloadBank. The event-instance reset is owned by ResetEventData on the
+        // ATL side. Return success to acknowledge the contract call.
+        return m_bInitialized;
     }
 
     bool AmplitudeMiddleware::StopEvent(AudioSystemDataID entityId, AudioSystemEventData* eventData)
@@ -749,10 +727,6 @@ namespace AmplitudeAudio
         m_pEngine->CancelEvents(entity);
         return true;
     }
-
-    // ========================================================================
-    //  RTPC (2)
-    // ========================================================================
 
     bool AmplitudeMiddleware::SetRtpc(AudioSystemDataID entityId, AudioSystemRtpcData* data, float value)
     {
@@ -788,10 +762,6 @@ namespace AmplitudeAudio
         return true;
     }
 
-    // ========================================================================
-    //  Switch (1)
-    // ========================================================================
-
     bool AmplitudeMiddleware::SetSwitchState(AudioSystemDataID entityId, AudioSystemSwitchStateData* data)
     {
         if (!m_bInitialized)
@@ -801,10 +771,6 @@ namespace AmplitudeAudio
         m_pEngine->SetSwitchState(amSwitch->SwitchID, amSwitch->StateID);
         return true;
     }
-
-    // ========================================================================
-    //  Obstruction / Occlusion (1)
-    // ========================================================================
 
     bool AmplitudeMiddleware::SetObstructionAndOcclusion(
         AudioSystemDataID entityId, AudioSystemEntityData* entityData, float obstruction, float occlusion)
@@ -822,10 +788,6 @@ namespace AmplitudeAudio
         return true;
     }
 
-    // ========================================================================
-    //  Environment (1)
-    // ========================================================================
-
     bool AmplitudeMiddleware::SetEnvironmentAmount(
         AudioSystemDataID entityId, AudioSystemEnvironmentData* envData, float amount)
     {
@@ -841,11 +803,7 @@ namespace AmplitudeAudio
         return true;
     }
 
-    // ========================================================================
-    //  Bank (3)
-    // ========================================================================
-
-    bool AmplitudeMiddleware::LoadBank(AudioSystemBankData* data)
+     bool AmplitudeMiddleware::LoadBank(AudioSystemBankData* data)
     {
         if (!m_bInitialized)
             return false;
@@ -895,7 +853,9 @@ namespace AmplitudeAudio
             // Finalize loading of sound files referenced by the bank.
             m_pEngine->StartLoadSoundFiles();
             if (!PollWithTimeout([this]()
-                                 { return m_pEngine->TryFinalizeLoadSoundFiles(); }))
+            {
+                return m_pEngine->TryFinalizeLoadSoundFiles();
+            }))
             {
                 LOG(Warning, "AmplitudeMiddleware: Timed out loading sound files for bank: {0}", requestedFilename);
                 m_pEngine->UnloadSoundBank(filenameOs);
@@ -956,6 +916,11 @@ namespace AmplitudeAudio
         Delete(static_cast<AmplitudeRtpcData*>(data));
     }
 
+    void AmplitudeMiddleware::DestroySwitchData(AudioSystemSwitchData* data)
+    {
+        Delete(static_cast<AmplitudeSwitchData*>(data));
+    }
+
     void AmplitudeMiddleware::DestroySwitchStateData(AudioSystemSwitchStateData* data)
     {
         Delete(static_cast<AmplitudeSwitchStateData*>(data));
@@ -993,6 +958,14 @@ namespace AmplitudeAudio
 
         m_pEngine->SetMute(muted);
         LOG(Warning, "[AudioSystem] SetMasterMute: {0}.", muted ? TEXT("yes") : TEXT("no"));
+    }
+
+    void AmplitudeMiddleware::OnPaused(bool paused)
+    {
+        if (!m_bInitialized)
+            return;
+
+        m_pEngine->Pause(paused);
     }
 
     void AmplitudeMiddleware::OnLoseFocus()

@@ -10,7 +10,7 @@
 			"Name": "$(EnginePath)/Flax.flaxproj"
 		},
 		{
-			"Name": "$(ProjectPath)/../FlaxAudioSystemPlugin/AudioSystem.flaxproj"
+			"Name": "$(ProjectPath)/../AudioSystem/AudioSystem.flaxproj"
 		}
 	],
 	"DefaultScene": null,

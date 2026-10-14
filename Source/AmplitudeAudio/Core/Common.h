@@ -14,26 +14,15 @@
 
 #pragma once
 
-// ============================================================================
-//  AmplitudeAudio — Common constants
-//
-//  Shared compile-time constants used across the AmplitudeAudio plugin.
-//  This file intentionally contains only defines and constexpr values.
-//  No classes, functions, or mutable state belong here.
-// ============================================================================
+class ISerializeModifier;
+class JsonAsset;
 
 namespace AmplitudeAudio
 {
-    // ========================================================================
-    //  Plugin identity
-    // ========================================================================
-
-    /// <summary>Display name of this plugin, used for logging and registration.</summary>
+    /// <summary>
+    /// Display name of this plugin, used for logging and registration.
+    /// </summary>
     static constexpr const char* kPluginName = "Amplitude";
-
-    // ========================================================================
-    //  Asset paths
-    // ========================================================================
 
     /// <summary>
     /// Root directory (relative to the project's Content folder) under which
@@ -41,24 +30,24 @@ namespace AmplitudeAudio
     /// </summary>
     static constexpr const char* kAssetBasePath = "Content/Sounds/Amplitude/";
 
-    // ========================================================================
-    //  File extensions
-    // ========================================================================
-
-    /// <summary>Sound bank package files produced by the Amplitude build pipeline.</summary>
+    /// <summary>
+    /// Sound bank package files produced by the Amplitude build pipeline.
+    /// </summary>
     static constexpr const char* kExtSoundBank = ".ambank";
 
-    /// <summary>Engine configuration files consumed at Amplitude initialisation.</summary>
+    /// <summary>
+    /// Engine configuration files consumed at Amplitude initialization.
+    /// </summary>
     static constexpr const char* kExtConfig = ".amconfig";
 
-    /// <summary>Binary pack files that bundle multiple Amplitude assets together.</summary>
+    /// <summary>
+    /// Binary pack files for release builds.
+    /// </summary>
     static constexpr const char* kExtPack = ".ampk";
 
-    // ========================================================================
-    //  Default asset names
-    // ========================================================================
-
-    /// <summary>File name (without extension) of the default Amplitude engine config.</summary>
+    /// <summary>
+    /// File name (without extension) of the default Amplitude engine config.
+    /// </summary>
     static constexpr const char* kDefaultConfigName = "pc.amconfig";
 
     /// <summary>
@@ -67,4 +56,14 @@ namespace AmplitudeAudio
     /// </summary>
     static constexpr const char* kDefaultInitBankName = "init.ambank";
 
+    /// <summary>
+    /// Returns the active <c>ISerializeModifier</c> for a JsonAsset deserialize
+    /// pass. The Flax C++ JsonAsset pipeline does not currently expose a
+    /// modifier; this helper exists as the single migration point for when a
+    /// future asset-versioning hook is added.
+    /// </summary>
+    inline ISerializeModifier* GetActiveModifier(const JsonAsset* /*asset*/)
+    {
+        return nullptr;
+    }
 } // namespace AmplitudeAudio

@@ -26,8 +26,8 @@ namespace AmplitudeAudioEditor
     /// button. The button scans the Amplitude project directory for audio
     /// control definitions and writes them to the configured asset path.
     /// </summary>
-    [CustomEditor(typeof(AudioControlsScript)), DefaultEditor]
-    public class AudioControlsScriptEditor : GenericEditor
+    [CustomEditor(typeof(AudioControls)), DefaultEditor]
+    public class AudioControlsEditor : GenericEditor
     {
         /// <inheritdoc />
         public override void Initialize(LayoutElementsContainer layout)
@@ -46,36 +46,36 @@ namespace AmplitudeAudioEditor
             var button = group.Button("Reload Controls");
             button.Button.Clicked += () =>
             {
-                // Resolve the project sources path from the Amplitude config asset.
-                var projectPath = AmplitudeControlsGenerator.GetProjectSourcesPath();
+                // Resolve the project sources path from the Amplitude Configuration settings.
+                var projectPath = ControlsGenerator.GetProjectSourcesPath();
                 var outputPath = outputPathBox.TextBox.Text;
 
                 if (string.IsNullOrWhiteSpace(projectPath))
                 {
-                    Debug.LogWarning("[AudioControlsScriptEditor] ProjectSourcesPath is not configured. " +
-                                     "Set it in the Amplitude Configuration asset (Config.json).");
+                    Debug.LogWarning("[AudioControlsEditor] ProjectSourcesPath is not configured. " +
+                                     "Set it in the Amplitude Configuration via Settings > Game Settings.");
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(outputPath))
                 {
-                    Debug.LogWarning("[AudioControlsScriptEditor] Output asset path is empty.");
+                    Debug.LogWarning("[AudioControlsEditor] Output asset path is empty.");
                     return;
                 }
 
-                var success = AmplitudeControlsGenerator.ReloadControls(projectPath, outputPath);
+                var success = ControlsGenerator.ReloadControls(projectPath, outputPath);
                 if (success)
                 {
-                    Debug.Log($"[AudioControlsScriptEditor] Controls reloaded to: {outputPath}");
+                    Debug.Log($"[AudioControlsEditor] Controls reloaded to: {outputPath}");
 
                     // Auto-fill the component's ControlsAssetPath with the output path.
                     foreach (var value in Values)
-                        if (value is AudioControlsScript component)
+                        if (value is AudioControls component)
                             component.ControlsAssetPath = outputPath;
                 }
                 else
                 {
-                    Debug.LogError("[AudioControlsScriptEditor] Failed to reload controls.");
+                    Debug.LogError("[AudioControlsEditor] Failed to reload controls.");
                 }
             };
         }

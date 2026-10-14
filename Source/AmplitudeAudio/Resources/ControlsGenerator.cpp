@@ -12,31 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ============================================================================
-//  AmplitudeControlsGenerator — Editor-only audio controls discovery
-//  (implementation)
-// ============================================================================
-
 #if USE_EDITOR
 
-#include "AmplitudeControlsGenerator.h"
+#include "ControlsGenerator.h"
 
+#include <Engine/Content/AssetReference.h>
 #include <Engine/Content/Content.h>
 #include <Engine/Content/JsonAsset.h>
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/File.h>
 #include <Engine/Platform/FileSystem.h>
+#include <Engine/Platform/StringUtils.h>
 #include <Engine/Serialization/JsonTools.h>
 #include <Engine/Serialization/JsonWriter.h>
 #include <Engine/Serialization/JsonWriters.h>
 #include <Engine/Serialization/Serialization.h>
+#include <algorithm>
 #include <cstring>
 
-#include "AmplitudeAudio/Core/Common.h"
-
-// ============================================================================
-//  Helpers
-// ============================================================================
+#include <AmplitudeAudio/AmplitudeSettings.h>
+#include <AmplitudeAudio/Core/Common.h>
 
 namespace
 {
@@ -63,8 +58,7 @@ namespace
         // Find last separator.
         int32       lastSep     = path.FindLast(TEXT('/'));
         const int32 lastBackSep = path.FindLast(TEXT('\\'));
-        if (lastBackSep > lastSep)
-            lastSep = lastBackSep;
+        lastSep                 = std::max(lastBackSep, lastSep);
 
         const String filename = (lastSep >= 0) ? path.Substring(lastSep + 1) : path;
 
@@ -82,13 +76,70 @@ namespace
         FileSystem::DirectoryGetFiles(
             outPaths, dir, TEXT("*.json"), DirectorySearchOption::AllDirectories);
     }
+
+    /// <summary>
+    /// Parses the "ID" field from an existing Flax JSON asset's text content.
+    /// Returns true and populates <paramref name="outId"/> on success; returns
+    /// false (without modifying outId) when the file is not a JSON object or
+    /// has no usable "ID" field.
+    /// </summary>
+    bool TryParseExistingAssetId(const StringAnsi& jsonContent, Guid& outId)
+    {
+        rapidjson_flax::Document doc;
+        doc.Parse(jsonContent.Get(), jsonContent.Length());
+        if (doc.HasParseError() || !doc.IsObject())
+            return false;
+
+        if (!doc.HasMember("ID") || !doc["ID"].IsString())
+            return false;
+
+        const String idStr(doc["ID"].GetString());
+        Guid         parsed;
+        // Guid::Parse returns TRUE on failure (Flax convention).
+        if (Guid::Parse(StringView(*idStr, idStr.Length()), parsed))
+            return false;
+
+        outId = parsed;
+        return true;
+    }
+
+    /// <summary>
+    /// Derives a deterministic 128-bit GUID by hashing the bytes of
+    /// <paramref name="path"/> with four FNV-1a accumulators seeded
+    /// distinctly. The same path always yields the same GUID, which keeps
+    /// scene/prefab/script references stable across regeneration.
+    /// </summary>
+    Guid DeriveStableGuidFromPath(const String& path)
+    {
+        const StringAnsi pathAnsi(path);
+        const char*      data = pathAnsi.Get();
+        const int32      len  = pathAnsi.Length();
+
+        // FNV-1a 32-bit constants.
+        constexpr uint32 kFnvOffset = 0x811C9DC5u;
+        constexpr uint32 kFnvPrime  = 0x01000193u;
+
+        // Seed four independent accumulators so the four output uint32s are
+        // distinct functions of the same input.
+        uint32 a = kFnvOffset;
+        uint32 b = kFnvOffset ^ 0xA5A5A5A5u;
+        uint32 c = kFnvOffset ^ 0x5A5A5A5Au;
+        uint32 d = kFnvOffset ^ 0xDEADBEEFu;
+
+        for (int32 i = 0; i < len; ++i)
+        {
+            const uint8 byte = static_cast<uint8>(data[i]);
+            a                = (a ^ byte) * kFnvPrime;
+            b                = (b ^ byte) * kFnvPrime;
+            c                = (c ^ byte) * kFnvPrime;
+            d                = (d ^ byte) * kFnvPrime;
+        }
+
+        return Guid(a, b, c, d);
+    }
 } // namespace
 
-// ============================================================================
-//  Per-category scanners
-// ============================================================================
-
-void AmplitudeControlsGenerator::ScanEvents(
+void ControlsGenerator::ScanEvents(
     const String& dir, Array<AudioControlEntry>& out)
 {
     Array<String> files;
@@ -115,7 +166,7 @@ void AmplitudeControlsGenerator::ScanEvents(
     }
 }
 
-void AmplitudeControlsGenerator::ScanSwitches(
+void ControlsGenerator::ScanSwitches(
     const String& dir, Array<AudioControlEntry>& out)
 {
     Array<String> files;
@@ -182,7 +233,7 @@ void AmplitudeControlsGenerator::ScanSwitches(
     }
 }
 
-void AmplitudeControlsGenerator::ScanRtpcs(
+void ControlsGenerator::ScanRtpcs(
     const String& dir, Array<AudioControlEntry>& out)
 {
     Array<String> files;
@@ -209,7 +260,7 @@ void AmplitudeControlsGenerator::ScanRtpcs(
     }
 }
 
-void AmplitudeControlsGenerator::ScanSoundBanks(
+void ControlsGenerator::ScanSoundBanks(
     const String& dir, Array<AudioControlEntry>& out)
 {
     Array<String> files;
@@ -238,7 +289,7 @@ void AmplitudeControlsGenerator::ScanSoundBanks(
     }
 }
 
-void AmplitudeControlsGenerator::ScanEffects(
+void ControlsGenerator::ScanEffects(
     const String& dir, Array<AudioControlEntry>& out)
 {
     Array<String> files;
@@ -265,18 +316,14 @@ void AmplitudeControlsGenerator::ScanEffects(
     }
 }
 
-// ============================================================================
-//  GenerateFromProject
-// ============================================================================
-
-Array<AudioControlEntry> AmplitudeControlsGenerator::GenerateFromProject(
+Array<AudioControlEntry> ControlsGenerator::GenerateFromProject(
     const String& projectPath)
 {
     Array<AudioControlEntry> entries;
 
     if (!FileSystem::DirectoryExists(projectPath))
     {
-        LOG(Error, "[AmplitudeControlsGenerator] Project directory does not exist: {0}", projectPath);
+        LOG(Error, "[ControlsGenerator] Project directory does not exist: {0}", projectPath);
         return entries;
     }
 
@@ -287,21 +334,59 @@ Array<AudioControlEntry> AmplitudeControlsGenerator::GenerateFromProject(
     ScanSoundBanks(projectPath / TEXT("soundbanks"), entries);
     ScanEffects(projectPath / TEXT("effects"), entries);
 
-    LOG(Info, "[AmplitudeControlsGenerator] Discovered {0} controls from: {1}",
+    LOG(Info, "[ControlsGenerator] Discovered {0} controls from: {1}",
         entries.Count(), projectPath);
 
     return entries;
 }
 
-// ============================================================================
-//  ReloadControls — write a Flax JSON asset file
-// ============================================================================
-
-bool AmplitudeControlsGenerator::ReloadControls(
+bool ControlsGenerator::ReloadControls(
     const String& projectPath, const String& outputAssetPath)
 {
     // 1. Generate controls from the Amplitude project.
     const Array<AudioControlEntry> entries = GenerateFromProject(projectPath);
+
+    // 1b. Resolve the asset's stable GUID. Re-using an existing asset's ID
+    //     preserves scene/prefab/script references across regeneration; only
+    //     when no asset exists do we derive a new deterministic ID from the
+    //     output path. If the existing file is unreadable but present, refuse
+    //     to overwrite so the failure surfaces loudly.
+    Guid assetId;
+    if (FileSystem::FileExists(outputAssetPath))
+    {
+        StringAnsi existingContent;
+        // File::ReadAllText returns TRUE on failure (Flax convention).
+        if (File::ReadAllText(outputAssetPath, existingContent))
+        {
+            LOG(Error, "[ControlsGenerator] Could not read existing asset to preserve its ID: {0}", outputAssetPath);
+            return false;
+        }
+
+        if (!TryParseExistingAssetId(existingContent, assetId))
+        {
+            LOG(Error,
+                "[ControlsGenerator] Existing asset at '{0}' is unreadable as a Flax JSON asset; "
+                "refusing to overwrite to avoid silently breaking inbound references.",
+                outputAssetPath);
+            return false;
+        }
+    }
+    else
+    {
+        assetId = DeriveStableGuidFromPath(outputAssetPath);
+
+        // Ensure the parent directory exists before we attempt to write the
+        // new asset. FileSystem::CreateDirectory returns TRUE on failure.
+        const String parentDir = String(StringUtils::GetDirectoryName(outputAssetPath));
+        if (!parentDir.IsEmpty() && !FileSystem::DirectoryExists(parentDir))
+        {
+            if (FileSystem::CreateDirectory(parentDir))
+            {
+                LOG(Error, "[ControlsGenerator] Failed to create parent directory: {0}", parentDir);
+                return false;
+            }
+        }
+    }
 
     // 2. Build the JSON asset content.
     //    Flax JSON assets have the format:
@@ -312,8 +397,6 @@ bool AmplitudeControlsGenerator::ReloadControls(
 
     writer.StartObject();
 
-    // ID — generate a deterministic GUID from the output path.
-    const Guid assetId = Guid::New();
     writer.JKEY("ID");
     writer.Guid(assetId);
 
@@ -369,39 +452,27 @@ bool AmplitudeControlsGenerator::ReloadControls(
     const StringAnsi jsonContent(buffer.GetString(), static_cast<int32>(buffer.GetSize()));
     if (File::WriteAllText(outputAssetPath, String(jsonContent), Encoding::UTF8))
     {
-        LOG(Error, "[AmplitudeControlsGenerator] Failed to write asset: {0}", outputAssetPath);
+        LOG(Error, "[ControlsGenerator] Failed to write asset: {0}", outputAssetPath);
         return false;
     }
 
-    LOG(Info, "[AmplitudeControlsGenerator] Wrote {0} controls to: {1}",
+    LOG(Info, "[ControlsGenerator] Wrote {0} controls to: {1}",
         entries.Count(), outputAssetPath);
     return true;
 }
 
-// ============================================================================
-//  GetProjectSourcesPath — resolve from config asset
-// ============================================================================
-
-String AmplitudeControlsGenerator::GetProjectSourcesPath()
+String ControlsGenerator::GetProjectSourcesPath()
 {
-    const String configPath = String(AmplitudeAudio::kAssetBasePath) + TEXT("/Config.json");
-
-    const auto asset = Content::Load<JsonAsset>(configPath);
-    if (asset == nullptr || asset->WaitForLoaded() || asset->Data == nullptr)
+    const AmplitudeSettings* settings = AmplitudeSettings::Get();
+    if (settings == nullptr)
     {
-        LOG(Warning, "[AmplitudeControlsGenerator] Could not load config asset: {0}", configPath);
+        LOG(Warning, "[ControlsGenerator] Amplitude Configuration settings not found.");
         return String::Empty;
     }
 
-    String projectSourcesPath;
-    {
-        auto&               stream   = *asset->Data;
-        ISerializeModifier* modifier = nullptr;
-        DESERIALIZE_MEMBER(ProjectSourcesPath, projectSourcesPath);
-    }
-
+    const String& projectSourcesPath = settings->ProjectSourcesPath;
     if (projectSourcesPath.IsEmpty())
-        return String::Empty;
+        return String(AmplitudeAudio::kAssetBasePath) + String("sources");
 
     return String(AmplitudeAudio::kAssetBasePath) + projectSourcesPath;
 }

@@ -14,24 +14,13 @@
 
 #pragma once
 
-// ============================================================================
-//  AmplitudeConfiguration — Per-platform configuration profiles
-//
-//  Defines the AmplitudeConfiguration struct (per-platform settings),
-//  AmplitudePlatformProfile struct, the AmplitudeConfigurationAsset class
-//  (editable JSON asset), and the internal AmplitudeAssetProfiles helper.
-// ============================================================================
-
 #include <Engine/Core/Collections/Array.h>
 #include <Engine/Core/Collections/Dictionary.h>
+#include <Engine/Core/Config/Settings.h>
 #include <Engine/Core/ISerializable.h>
 #include <Engine/Core/Types/String.h>
 #include <Engine/Scripting/ScriptingObject.h>
 #include <Engine/Serialization/JsonTools.h>
-
-// ============================================================================
-//  AmplitudeConfiguration
-// ============================================================================
 
 /// <summary>Per-platform Amplitude configuration.</summary>
 /// <remarks>
@@ -59,11 +48,9 @@ struct AMPLITUDEAUDIO_API AmplitudeConfiguration : public ISerializable
     String EngineConfigFile;
 };
 
-// ============================================================================
-//  AmplitudePlatformProfile
-// ============================================================================
-
-/// <summary>A named platform profile binding a platform name to its configuration.</summary>
+/// <summary>
+/// A named platform profile binding a platform name to its configuration.
+/// </summary>
 API_STRUCT()
 struct AMPLITUDEAUDIO_API AmplitudePlatformProfile : public ISerializable
 {
@@ -79,21 +66,22 @@ struct AMPLITUDEAUDIO_API AmplitudePlatformProfile : public ISerializable
     AmplitudeConfiguration Config;
 };
 
-// ============================================================================
-//  AmplitudeConfigurationAsset — Editable JSON asset
-// ============================================================================
-
-/// <summary>Flax content asset that stores per-platform Amplitude configuration.</summary>
+/// <summary>
+/// Flax game settings that store per-platform Amplitude configuration.
+/// </summary>
 /// <remarks>
-/// Create via the editor's "New > Audio > Amplitude Configuration" context menu.
-/// Contains an array of platform profiles and an optional Amplitude project path.
+/// Create via the editor's Game Settings window (Settings > Game Settings)
+/// or via "New > Audio System > Amplitude > Settings" context menu.
+/// Contains an array of platform profiles and optional Amplitude project paths.
 /// </remarks>
-API_CLASS(Attributes = "ContentContextMenu(\"New/Audio System/Amplitude/Configuration\")")
-class AMPLITUDEAUDIO_API AmplitudeConfigurationAsset : public ScriptingObject, public ISerializable
+API_CLASS(sealed, Namespace = "FlaxEditor.Content.Settings", Attributes = "ContentContextMenu(\"New/Audio System/Amplitude/Settings\")")
+class AMPLITUDEAUDIO_API AmplitudeSettings : public SettingsBase
 {
-    DECLARE_SCRIPTING_TYPE_WITH_CONSTRUCTOR_IMPL(AmplitudeConfigurationAsset, ScriptingObject);
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeSettings);
+    API_AUTO_SERIALIZATION();
 
-  public:
+    AmplitudeSettings();
+
     /// <summary>Per-platform configuration profiles.</summary>
     API_FIELD(Attributes = "EditorOrder(0)")
     Array<AmplitudePlatformProfile> Profiles;
@@ -114,17 +102,14 @@ class AMPLITUDEAUDIO_API AmplitudeConfigurationAsset : public ScriptingObject, p
     API_FIELD(Attributes = "EditorOrder(2)")
     String ProjectSourcesPath;
 
-    // ========================================================================
-    //  ISerializable
-    // ========================================================================
+    /// <returns>The global singleton instance.</returns>
+    DECLARE_SETTINGS_GETTER(AmplitudeSettings);
 
-    void Serialize(SerializeStream& stream, const void* otherObj) override;
-    void Deserialize(DeserializeStream& stream, ISerializeModifier* modifier) override;
+    /// <summary>
+    /// Applies the settings to the Amplitude middleware.
+    /// </summary>
+    void Apply() override;
 };
-
-// ============================================================================
-//  AmplitudeAssetProfiles (internal, not exposed to scripting)
-// ============================================================================
 
 namespace AmplitudeAudio
 {
@@ -132,7 +117,7 @@ namespace AmplitudeAudio
     /// <remarks>Used internally by the middleware to store loaded configuration.</remarks>
     class AmplitudeAssetProfiles
     {
-      public:
+    public:
         AmplitudeAssetProfiles()  = default;
         ~AmplitudeAssetProfiles() = default;
 
@@ -146,15 +131,14 @@ namespace AmplitudeAudio
         /// <summary>Source project path, relative to kAssetBasePath. Used by editor controls generator.</summary>
         [[nodiscard]] const String& GetProjectSourcesPath() const;
 
-        /// <summary>Populates this object from an AmplitudeConfigurationAsset's data.</summary>
-        void LoadFromAsset(const Array<AmplitudePlatformProfile>& profiles,
-                           const String&                          projectBuildPath,
-                           const String&                          projectSourcesPath);
+        /// <summary>Populates this object from settings data.</summary>
+        void LoadFromSettings(const Array<AmplitudePlatformProfile>& profiles,
+                              const String&                          projectBuildPath,
+                              const String&                          projectSourcesPath);
 
-      private:
+    private:
         Dictionary<String, AmplitudeConfiguration> m_profiles;
         String                                     m_projectBuildPath;
         String                                     m_projectSourcesPath;
     };
-
 } // namespace AmplitudeAudio

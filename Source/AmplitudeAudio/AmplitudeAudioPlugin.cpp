@@ -14,21 +14,21 @@
 
 #include "AmplitudeAudioPlugin.h"
 
-// clang-formatt off
-#include "Core/Cpp20Compat.h"
+// clang-format off
+#include <AmplitudeAudio/Core/Cpp20Compat.h>
 // clang-format on
 
-#include <AudioSystem/Core/AudioSystem.h>
 #include <Engine/Core/Log.h>
+
+#include <AudioSystem/Core/AudioSystem.h>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 
-#include "AmplitudeMiddleware.h"
-#include "Core/AmplitudeHelpers.h"
-#include "Core/Common.h"
+#include <AmplitudeAudio/AmplitudeMiddleware.h>
+#include <AmplitudeAudio/Core/Common.h>
+#include <AmplitudeAudio/Core/FlaxMemoryAllocator.h>
 
-// ============================================================================
-//  AmplitudeAudioPlugin — Constructor
-// ============================================================================
+bool AmplitudeAudioPlugin::_initialized = false;
 
 AmplitudeAudioPlugin::AmplitudeAudioPlugin(const SpawnParams& params)
     : GamePlugin(params)
@@ -40,29 +40,30 @@ AmplitudeAudioPlugin::AmplitudeAudioPlugin(const SpawnParams& params)
     _description.RepositoryUrl = TEXT("https://github.com/AmplitudeAudio/integration-flax");
 }
 
-// ============================================================================
-//  AmplitudeAudioPlugin — Initialize
-// ============================================================================
-
 void AmplitudeAudioPlugin::Initialize()
 {
     using namespace SparkyStudios::Audio::Amplitude;
 
     GamePlugin::Initialize();
 
+    if (_initialized)
+        return;
+
     AudioSystem* audioSystem = AudioSystem::Get();
     if (audioSystem == nullptr)
     {
         LOG(Error, "[AmplitudeAudioPlugin] Initialize: AudioSystem is not available. "
-                   "Ensure the AudioSystem plugin is loaded before AmplitudeAudio.");
+            "Ensure the AudioSystem plugin is loaded before AmplitudeAudio.");
         return;
     }
 
+    // Initialize the Amplitude memory manager with Flax-backed allocator BEFORE
+    // any code path that may touch Amplitude allocators (including
+    // New<AmplitudeMiddleware>() which constructs SDK-allocated members).
+    MemoryManager::Initialize(std::make_unique<AmplitudeAudio::FlaxMemoryAllocator>());
+
     _middleware = New<AmplitudeAudio::AmplitudeMiddleware>();
     audioSystem->RegisterMiddleware(_middleware);
-
-    // Initialize the Amplitude memory manager with Flax-backed allocator.
-    MemoryManager::Initialize(std::make_unique<AmplitudeAudio::FlaxMemoryAllocator>());
 
     const auto rollbackInitialization = [this, audioSystem]()
     {
@@ -77,34 +78,41 @@ void AmplitudeAudioPlugin::Initialize()
         MemoryManager::Deinitialize();
     };
 
-    // Load middleware configuration
-    const String configPath = String(AmplitudeAudio::kAssetBasePath) + TEXT("Config.json");
-    if (!_middleware->LoadConfiguration(configPath))
+    // Load middleware configuration from the native Flax game settings
+    // (AmplitudeSettings). The file path argument is unused.
+    if (!_middleware->LoadConfiguration(StringView::Empty))
     {
-        LOG(Error, "[AmplitudeAudioPlugin] Failed to load middleware configuration: {0}", configPath);
+        LOG(Error, "[AmplitudeAudioPlugin] Failed to load middleware configuration. "
+            "Add the Amplitude Configuration via Settings > Game Settings.");
         rollbackInitialization();
         return;
     }
 
-    // Start the AudioSystem now that the middleware is registered and configured
-    if (!audioSystem->Startup())
+    // Signal the AudioSystem to finalize startup now that the middleware is
+    // registered and configured. AudioSystemPlugin defers Startup() to this
+    // explicit hook so dependents (like this plugin) can RegisterMiddleware
+    // during their own Initialize().
+    if (!audioSystem->CommitMiddleware())
     {
         LOG(Error, "[AmplitudeAudioPlugin] AudioSystem startup failed. "
-                   "Ensure Content/Sounds/Amplitude/Config.json exists with valid platform profiles.");
+            "Ensure the Amplitude Configuration game settings contain a profile for the current platform.");
         rollbackInitialization();
         return;
     }
 
+    _initialized = true;
     LOG(Info, "[AmplitudeAudioPlugin] Amplitude Audio middleware registered.");
 }
-
-// ============================================================================
-//  AmplitudeAudioPlugin — Deinitialize
-// ============================================================================
 
 void AmplitudeAudioPlugin::Deinitialize()
 {
     using namespace SparkyStudios::Audio::Amplitude;
+
+    if (!_initialized)
+    {
+        GamePlugin::Deinitialize();
+        return;
+    }
 
     AudioSystem* audioSystem = AudioSystem::Get();
     if (audioSystem != nullptr)
@@ -122,6 +130,7 @@ void AmplitudeAudioPlugin::Deinitialize()
     // Tear down the Amplitude memory manager.
     MemoryManager::Deinitialize();
 
+    _initialized = false;
     LOG(Info, "[AmplitudeAudioPlugin] Amplitude Audio middleware unregistered.");
 
     GamePlugin::Deinitialize();

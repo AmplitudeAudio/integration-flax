@@ -12,24 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ============================================================================
-//  AmplitudeFile — implementation
-// ============================================================================
+#include <AmplitudeAudio/IO/FlaxFile.h>
 
-#include "AmplitudeFile.h"
+#include <AmplitudeAudio/Core/Common.h>
 
 #include <Engine/Core/Types/String.h>
 #include <Engine/Core/Types/StringView.h>
 
-#include "../Core/Common.h"
-
 namespace AmplitudeAudio
 {
-    // ------------------------------------------------------------------------
-    //  Helpers — convert between AmOsString and Flax String / StringView
-    // ------------------------------------------------------------------------
-
-    /// <summary>Converts an AmOsString to a Flax String suitable for platform file APIs.</summary>
+    /// <summary>
+    /// Converts an AmOsString to a Flax String suitable for platform file APIs.
+    // </summary>
     /// <remarks>
     /// Flax's Char type may be char16_t (Unix) or wchar_t (Windows), so we
     /// cannot pass a wchar_t* directly on all platforms.  We always route
@@ -38,11 +32,8 @@ namespace AmplitudeAudio
     /// </remarks>
     static ::String AmOsStringToFlaxString(const AmOsString& path)
     {
-#if defined(AM_WCHAR_SUPPORTED)
-        // AmOsString is std::wstring.  Narrow it via the SDK helper and then
-        // wrap in Flax's StringAnsi so the Flax String constructor receives a
-        // null-terminated char*.  We copy into a local std::string first to
-        // avoid holding a pointer to a temporary.
+#ifdef AM_WCHAR_SUPPORTED
+        // AmOsString is std::wstring.
         const std::string narrow = am_wstring_narrow(path);
         return ::String(::StringAnsi(narrow.c_str()));
 #else
@@ -51,47 +42,45 @@ namespace AmplitudeAudio
 #endif
     }
 
-    // ------------------------------------------------------------------------
-    //  eFileOpenMode → Flax FileMode / FileAccess mapping
-    // ------------------------------------------------------------------------
-
+    /// <summary>
+    /// Maps a high-level file open mode to the underlying platform-specific file mode and access settings.
+    /// </summary>
+    /// <param name="mode">The file open mode specified as an enum of type eFileOpenMode.</param>
+    /// <param name="outFileMode">A reference to the resulting file mode of type FileMode.</param>
+    /// <param name="outAccess">A reference to the resulting file access of type FileAccess.</param>
     static void MapOpenMode(eFileOpenMode mode, FileMode& outFileMode, FileAccess& outAccess)
     {
         switch (mode)
         {
             case eFileOpenMode_Write:
                 outFileMode = FileMode::CreateAlways;
-                outAccess   = FileAccess::Write;
+                outAccess = FileAccess::Write;
                 break;
 
             case eFileOpenMode_Append:
                 outFileMode = FileMode::OpenAlways;
-                outAccess   = FileAccess::Write;
+                outAccess = FileAccess::Write;
                 break;
 
             case eFileOpenMode_ReadWrite:
                 outFileMode = FileMode::CreateAlways;
-                outAccess   = FileAccess::ReadWrite;
+                outAccess = FileAccess::ReadWrite;
                 break;
 
             case eFileOpenMode_ReadAppend:
                 outFileMode = FileMode::OpenAlways;
-                outAccess   = FileAccess::ReadWrite;
+                outAccess = FileAccess::ReadWrite;
                 break;
 
             case eFileOpenMode_Read:
             default:
                 outFileMode = FileMode::OpenExisting;
-                outAccess   = FileAccess::Read;
+                outAccess = FileAccess::Read;
                 break;
         }
     }
 
-    // ------------------------------------------------------------------------
-    //  Constructor / destructor
-    // ------------------------------------------------------------------------
-
-    AmplitudeFile::AmplitudeFile(const AmOsString& path, eFileOpenMode mode)
+    FlaxFile::FlaxFile(const AmOsString& path, eFileOpenMode mode)
         : m_path(path), m_handle(nullptr)
     {
         FileMode   flaxMode   = FileMode::OpenExisting;
@@ -103,26 +92,22 @@ namespace AmplitudeAudio
         // m_handle is nullptr when the open fails; IsValid() propagates this.
     }
 
-    AmplitudeFile::~AmplitudeFile()
+    FlaxFile::~FlaxFile()
     {
         Close();
     }
 
-    // ------------------------------------------------------------------------
-    //  File interface implementation
-    // ------------------------------------------------------------------------
-
-    AmOsString AmplitudeFile::GetPath() const
+    AmOsString FlaxFile::GetPath() const
     {
         return m_path;
     }
 
-    bool AmplitudeFile::IsValid() const
+    bool FlaxFile::IsValid() const
     {
         return m_handle != nullptr && m_handle->IsOpened();
     }
 
-    bool AmplitudeFile::Eof() const
+    bool FlaxFile::Eof() const
     {
         if (m_handle == nullptr)
             return true;
@@ -130,7 +115,7 @@ namespace AmplitudeAudio
         return m_handle->GetPosition() >= m_handle->GetSize();
     }
 
-    AmSize AmplitudeFile::Read(AmUInt8Buffer dst, AmSize bytes) const
+    AmSize FlaxFile::Read(AmUInt8Buffer dst, AmSize bytes) const
     {
         if (m_handle == nullptr || dst == nullptr || bytes == 0)
             return 0;
@@ -140,18 +125,18 @@ namespace AmplitudeAudio
         return error ? 0 : static_cast<AmSize>(bytesRead);
     }
 
-    AmSize AmplitudeFile::Write(AmConstUInt8Buffer src, AmSize bytes)
+    AmSize FlaxFile::Write(AmConstUInt8Buffer src, AmSize bytes)
     {
         if (m_handle == nullptr || src == nullptr || bytes == 0)
             return 0;
 
-        uint32 bytesWritten = 0;
+        uint32     bytesWritten = 0;
         // FileBase::Write takes a non-const void* for the buffer argument.
-        const bool error = m_handle->Write(src, static_cast<uint32>(bytes), &bytesWritten);
+        const bool error        = m_handle->Write(src, static_cast<uint32>(bytes), &bytesWritten);
         return error ? 0 : static_cast<AmSize>(bytesWritten);
     }
 
-    AmSize AmplitudeFile::Length() const
+    AmSize FlaxFile::Length() const
     {
         if (m_handle == nullptr)
             return 0;
@@ -159,7 +144,7 @@ namespace AmplitudeAudio
         return static_cast<AmSize>(m_handle->GetSize());
     }
 
-    void AmplitudeFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
+    void FlaxFile::Seek(AmInt64 offset, eFileSeekOrigin origin)
     {
         if (m_handle == nullptr)
             return;
@@ -196,7 +181,7 @@ namespace AmplitudeAudio
         m_handle->SetPosition(targetPosition);
     }
 
-    AmSize AmplitudeFile::Position() const
+    AmSize FlaxFile::Position() const
     {
         if (m_handle == nullptr)
             return 0;
@@ -204,12 +189,12 @@ namespace AmplitudeAudio
         return static_cast<AmSize>(m_handle->GetPosition());
     }
 
-    AmVoidPtr AmplitudeFile::GetPtr() const
+    AmVoidPtr FlaxFile::GetPtr() const
     {
         return static_cast<AmVoidPtr>(m_handle);
     }
 
-    void AmplitudeFile::Close()
+    void FlaxFile::Close()
     {
         if (m_handle != nullptr)
         {
@@ -218,5 +203,4 @@ namespace AmplitudeAudio
             m_handle = nullptr;
         }
     }
-
 } // namespace AmplitudeAudio

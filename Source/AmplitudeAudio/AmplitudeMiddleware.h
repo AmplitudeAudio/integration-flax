@@ -14,15 +14,7 @@
 
 #pragma once
 
-// ============================================================================
-//  AmplitudeMiddleware — Core AudioMiddleware implementation
-//
-//  Implements the full AudioMiddleware interface by delegating to the
-//  Amplitude Audio SDK Engine singleton.  All 48 pure-virtual methods are
-//  overridden here.
-// ============================================================================
-
-// clang-formatt off
+// clang-format off
 #include "Core/Cpp20Compat.h"
 // clang-format on
 
@@ -30,23 +22,19 @@
 #include <Engine/Core/Collections/Dictionary.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 
-#include "AmplitudeConfiguration.h"
+#include "AmplitudeSettings.h"
 
 namespace AmplitudeAudio
 {
-    class AmplitudeFileSystem;
+    class FlaxFileSystem;
 
     /// <summary>Concrete AudioMiddleware backed by the Amplitude Audio SDK.</summary>
     /// <remarks>Lifecycle: LoadConfiguration -> Startup -> Update loop -> Shutdown -> Release.</remarks>
     class AmplitudeMiddleware final : public AudioMiddleware
     {
-      public:
+    public:
         AmplitudeMiddleware();
         ~AmplitudeMiddleware() override;
-
-        // ====================================================================
-        //  Lifecycle (6)
-        // ====================================================================
 
         bool LoadConfiguration(StringView configFile) override;
         bool Startup() override;
@@ -59,10 +47,6 @@ namespace AmplitudeAudio
         bool DeployFiles(const StringView& outputPath) override;
 #endif
 
-        // ====================================================================
-        //  Entity (8)
-        // ====================================================================
-
         AudioSystemEntityData* CreateWorldEntity(AudioSystemDataID id) override;
         AudioSystemEntityData* CreateEntityData(AudioSystemDataID id) override;
         void                   DestroyEntityData(AudioSystemEntityData* data) override;
@@ -72,10 +56,6 @@ namespace AmplitudeAudio
         bool                   RemoveEntity(AudioSystemDataID id, AudioSystemEntityData* data) override;
         bool                   SetEntityTransform(AudioSystemDataID id, AudioSystemEntityData* data, const AudioSystemTransform& transform) override;
 
-        // ====================================================================
-        //  Listener (6)
-        // ====================================================================
-
         AudioSystemListenerData* CreateListenerData(AudioSystemDataID id, bool isDefault) override;
         void                     DestroyListenerData(AudioSystemListenerData* data) override;
         bool                     AddListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
@@ -83,80 +63,48 @@ namespace AmplitudeAudio
         bool                     RemoveListener(AudioSystemDataID id, AudioSystemListenerData* data) override;
         bool                     SetListenerTransform(AudioSystemDataID id, AudioSystemListenerData* data, const AudioSystemTransform& transform) override;
 
-        // ====================================================================
-        //  Event (3)
-        // ====================================================================
-
         AudioSystemEventData* CreateEventData(AudioSystemDataID id) override;
         void                  ResetEventData(AudioSystemEventData* data) override;
         void                  DestroyEventData(AudioSystemEventData* data) override;
 
-        // ====================================================================
-        //  Trigger (5)
-        // ====================================================================
-
-        bool LoadTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData, AudioSystemEventData* eventData) override;
+        bool LoadTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData) override;
         bool ActivateTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData, AudioSystemEventData* eventData) override;
-        bool UnloadTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData, AudioSystemEventData* eventData) override;
+        bool ActivateTriggerMulti(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData,
+            const Array<TriggerLocationEntry>& locations, AudioSystemMultiPositionBehavior behavior) override;
+        bool UnloadTrigger(AudioSystemDataID entityId, AudioSystemTriggerData* triggerData) override;
         bool StopEvent(AudioSystemDataID entityId, AudioSystemEventData* eventData) override;
         bool StopAllEvents(AudioSystemDataID entityId) override;
-
-        // ====================================================================
-        //  RTPC (2)
-        // ====================================================================
 
         bool SetRtpc(AudioSystemDataID entityId, AudioSystemRtpcData* data, float value) override;
         bool ResetRtpc(AudioSystemDataID entityId, AudioSystemRtpcData* data) override;
 
-        // ====================================================================
-        //  Switch (1)
-        // ====================================================================
-
         bool SetSwitchState(AudioSystemDataID entityId, AudioSystemSwitchStateData* data) override;
-
-        // ====================================================================
-        //  Obstruction / Occlusion (1)
-        // ====================================================================
 
         bool SetObstructionAndOcclusion(AudioSystemDataID entityId, AudioSystemEntityData* entityData, float obstruction, float occlusion) override;
 
-        // ====================================================================
-        //  Environment (1)
-        // ====================================================================
-
         bool SetEnvironmentAmount(AudioSystemDataID entityId, AudioSystemEnvironmentData* envData, float amount) override;
-
-        // ====================================================================
-        //  Bank (3)
-        // ====================================================================
 
         bool LoadBank(AudioSystemBankData* data) override;
         bool UnloadBank(AudioSystemBankData* data) override;
         void DestroyBank(AudioSystemBankData* data) override;
 
-        // ====================================================================
-        //  Control Data Destroy (4)
-        // ====================================================================
-
         void DestroyTriggerData(AudioSystemTriggerData* data) override;
         void DestroyRtpcData(AudioSystemRtpcData* data) override;
+        void DestroySwitchData(AudioSystemSwitchData* data) override;
         void DestroySwitchStateData(AudioSystemSwitchStateData* data) override;
         void DestroyEnvironmentData(AudioSystemEnvironmentData* data) override;
-
-        // ====================================================================
-        //  Global (8)
-        // ====================================================================
 
         void       SetLanguage(StringView language) override;
         void       OnMasterGainChange(float gain) override;
         void       OnMuteChange(bool muted) override;
+        void       OnPaused(bool paused) override;
         void       OnLoseFocus() override;
         void       OnGainFocus() override;
         StringView GetMiddlewareName() const override;
         float      GetMasterGain() const override;
         bool       GetMute() const override;
 
-      private:
+    private:
         struct LoadedBankState
         {
             SparkyStudios::Audio::Amplitude::AmBankID BankID   = 0;
@@ -173,9 +121,9 @@ namespace AmplitudeAudio
         SparkyStudios::Audio::Amplitude::Engine* m_pEngine;
 
         /// <summary>Custom file system bridging Flax I/O to Amplitude.</summary>
-        std::shared_ptr<AmplitudeFileSystem> m_pFileSystem;
+        std::shared_ptr<FlaxFileSystem> m_pFileSystem;
 
-        /// <summary>Per-platform configuration profiles loaded from JSON.</summary>
+        /// <summary>Per-platform configuration profiles loaded from game settings.</summary>
         AmplitudeAssetProfiles m_profiles;
 
         /// <summary>Shared runtime load state keyed by sound-bank filename.</summary>
@@ -187,5 +135,4 @@ namespace AmplitudeAudio
         /// <summary>Whether Startup() completed successfully.</summary>
         bool m_bInitialized;
     };
-
 } // namespace AmplitudeAudio

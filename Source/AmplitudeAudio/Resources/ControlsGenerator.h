@@ -14,16 +14,6 @@
 
 #pragma once
 
-// ============================================================================
-//  AmplitudeControlsGenerator — Editor-only audio controls discovery
-//
-//  Scans an Amplitude Audio project's source JSON directories (events,
-//  switches, rtpc, soundbanks, effects) and produces AudioControlEntry
-//  values that can be written to an AudioControlCollection JSON asset.
-//
-//  This class is only available in editor builds (USE_EDITOR).
-// ============================================================================
-
 #if USE_EDITOR
 
 #include <Engine/Core/Collections/Array.h>
@@ -33,23 +23,22 @@
 #include "AudioControlCollectionResource.h"
 
 /// <summary>
-/// Editor-only utility that generates AudioControlEntry values
-///        by scanning an Amplitude Audio project directory.
+/// Editor-only utility that generates AudioControlEntry values by scanning an Amplitude Audio project directory.
 /// </summary>
 /// <remarks>
 /// Usage from C# editor scripts:
 /// \code
-///   AmplitudeControlsGenerator.ReloadControls(
+///   ControlsGenerator.ReloadControls(
 ///       "/path/to/amplitude_project",
 ///       "Content/Sounds/Amplitude/Controls.json");
 /// \endcode
 /// </remarks>
 API_CLASS(Static)
-class AMPLITUDEAUDIO_API AmplitudeControlsGenerator
+class AMPLITUDEAUDIO_API ControlsGenerator
 {
     DECLARE_SCRIPTING_TYPE_NO_SPAWN(AmplitudeControlsGenerator);
 
-  public:
+public:
     /// <summary>
     /// Scans the Amplitude project at <paramref name="projectPath"/> and writes
     ///        an AudioControlCollection JSON asset to <paramref name="outputAssetPath"/>.
@@ -83,7 +72,7 @@ class AMPLITUDEAUDIO_API AmplitudeControlsGenerator
     /// <returns>Array of discovered AudioControlEntry values.</returns>
     static Array<AudioControlEntry> GenerateFromProject(const String& projectPath);
 
-  private:
+private:
     static void ScanEvents(const String& dir, Array<AudioControlEntry>& out);
     static void ScanSwitches(const String& dir, Array<AudioControlEntry>& out);
     static void ScanRtpcs(const String& dir, Array<AudioControlEntry>& out);

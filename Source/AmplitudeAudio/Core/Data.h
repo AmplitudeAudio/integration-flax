@@ -25,30 +25,31 @@
 //  construction and destruction.
 // ============================================================================
 
-// clang-formatt off
+// clang-format off
 #include "Cpp20Compat.h"
 // clang-format on
 
-#include <AudioSystem/Core/AudioSystemData.h>
 #include <Engine/Core/Types/String.h>
+
+#include <AudioSystem/Core/AudioSystemData.h>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 
 namespace AmplitudeAudio
 {
     using namespace SparkyStudios::Audio::Amplitude;
-    // ========================================================================
-    //  AmplitudeEntityData
-    // ========================================================================
 
-    /// <summary>Holds the Amplitude entity ID for a registered game entity.</summary>
+    /// <summary>
+    /// Holds the Amplitude entity ID for a registered game entity.
+    /// </summary>
     /// <remarks>
     /// <c>hasPosition</c> indicates whether the entity has a 3-D spatial position
     /// that the middleware should track each frame.
     /// </remarks>
-    class AmplitudeEntityData final : public AudioSystemEntityData
+    class AMPLITUDEAUDIO_API AmplitudeEntityData final : public AudioSystemEntityData
     {
-      public:
+    public:
         AmplitudeEntityData();
         ~AmplitudeEntityData() override = default;
 
@@ -59,16 +60,12 @@ namespace AmplitudeAudio
         bool HasPosition;
     };
 
-    // ========================================================================
-    //  AmplitudeListenerData
-    // ========================================================================
-
     /// <summary>
     /// Holds the Amplitude listener ID for a registered audio listener.
     /// </summary>
-    class AmplitudeListenerData final : public AudioSystemListenerData
+    class AMPLITUDEAUDIO_API AmplitudeListenerData final : public AudioSystemListenerData
     {
-      public:
+    public:
         AmplitudeListenerData();
         ~AmplitudeListenerData() override = default;
 
@@ -79,18 +76,16 @@ namespace AmplitudeAudio
         bool IsDefault;
     };
 
-    // ========================================================================
-    //  AmplitudeTriggerData
-    // ========================================================================
-
-    /// <summary>Holds the Amplitude event ID that backs an audio trigger template.</summary>
+    /// <summary>
+    /// Holds the Amplitude event ID that backs an audio trigger template.
+    /// </summary>
     /// <remarks>
     /// A "trigger" in the AudioSystem corresponds to an Amplitude <c>Event</c> asset;
     /// this class stores the ID used to look up and fire that event at runtime.
     /// </remarks>
-    class AmplitudeTriggerData final : public AudioSystemTriggerData
+    class AMPLITUDEAUDIO_API AmplitudeTriggerData final : public AudioSystemTriggerData
     {
-      public:
+    public:
         AmplitudeTriggerData();
         ~AmplitudeTriggerData() override = default;
 
@@ -98,11 +93,9 @@ namespace AmplitudeAudio
         AmEventID EventID;
     };
 
-    // ========================================================================
-    //  PlaybackState
-    // ========================================================================
-
-    /// <summary>Lifecycle state of a live Amplitude event instance.</summary>
+    /// <summary>
+    /// Lifecycle state of a live Amplitude event instance.
+    /// </summary>
     enum class PlaybackState : uint8_t
     {
         /// <summary>No event has been triggered yet (or it has fully completed).</summary>
@@ -115,19 +108,15 @@ namespace AmplitudeAudio
         Stopping = 2,
     };
 
-    // ========================================================================
-    //  AmplitudeEventData
-    // ========================================================================
-
     /// <summary>Holds the live state of a triggered Amplitude event instance.</summary>
     /// <remarks>
     /// Created when an <c>AmplitudeTriggerData</c> is fired. Stores the event
     /// asset ID, the <c>EventCanceler</c> token needed to abort the instance, and
     /// the current playback state.
     /// </remarks>
-    class AmplitudeEventData final : public AudioSystemEventData
+    class AMPLITUDEAUDIO_API AmplitudeEventData final : public AudioSystemEventData
     {
-      public:
+    public:
         AmplitudeEventData();
         ~AmplitudeEventData() override = default;
 
@@ -141,14 +130,12 @@ namespace AmplitudeAudio
         PlaybackState State;
     };
 
-    // ========================================================================
-    //  AmplitudeRtpcData
-    // ========================================================================
-
-    /// <summary>Holds the Amplitude RTPC (Real-Time Parameter Control) ID.</summary>
-    class AmplitudeRtpcData final : public AudioSystemRtpcData
+    /// <summary>
+    /// Holds the Amplitude RTPC (Real-Time Parameter Control) ID.
+    /// </summary>
+    class AMPLITUDEAUDIO_API AmplitudeRtpcData final : public AudioSystemRtpcData
     {
-      public:
+    public:
         AmplitudeRtpcData();
         ~AmplitudeRtpcData() override = default;
 
@@ -156,14 +143,12 @@ namespace AmplitudeAudio
         AmRtpcID RtpcID;
     };
 
-    // ========================================================================
-    //  AmplitudeSwitchData
-    // ========================================================================
-
-    /// <summary>Holds the Amplitude switch container ID.</summary>
-    class AmplitudeSwitchData final : public AudioSystemSwitchData
+    /// <summary>
+    /// Holds the Amplitude switch container ID.
+    /// </summary>
+    class AMPLITUDEAUDIO_API AmplitudeSwitchData final : public AudioSystemSwitchData
     {
-      public:
+    public:
         AmplitudeSwitchData();
         ~AmplitudeSwitchData() override = default;
 
@@ -171,18 +156,16 @@ namespace AmplitudeAudio
         AmSwitchID SwitchID;
     };
 
-    // ========================================================================
-    //  AmplitudeSwitchStateData
-    // ========================================================================
-
-    /// <summary>Holds the Amplitude switch ID and the selected state object ID.</summary>
+    /// <summary>
+    /// Holds the Amplitude switch ID and the selected state object ID.
+    /// </summary>
     /// <remarks>
     /// <c>SwitchID</c> identifies the switch container asset; <c>StateID</c> identifies
     /// the currently selected state within that container.
     /// </remarks>
-    class AmplitudeSwitchStateData final : public AudioSystemSwitchStateData
+    class AMPLITUDEAUDIO_API AmplitudeSwitchStateData final : public AudioSystemSwitchStateData
     {
-      public:
+    public:
         AmplitudeSwitchStateData();
         ~AmplitudeSwitchStateData() override = default;
 
@@ -193,14 +176,12 @@ namespace AmplitudeAudio
         AmObjectID StateID;
     };
 
-    // ========================================================================
-    //  AmplitudeEnvironmentData
-    // ========================================================================
-
-    /// <summary>Holds the Amplitude environment (aux-bus / reverb zone) ID.</summary>
-    class AmplitudeEnvironmentData final : public AudioSystemEnvironmentData
+    /// <summary>
+    /// Holds the Amplitude environment (aux-bus / reverb zone) ID.
+    /// </summary>
+    class AMPLITUDEAUDIO_API AmplitudeEnvironmentData final : public AudioSystemEnvironmentData
     {
-      public:
+    public:
         AmplitudeEnvironmentData();
         ~AmplitudeEnvironmentData() override = default;
 
@@ -208,19 +189,17 @@ namespace AmplitudeAudio
         AmEnvironmentID EnvironmentID;
     };
 
-    // ========================================================================
-    //  AmplitudeBankData
-    // ========================================================================
-
-    /// <summary>Holds the Amplitude sound bank ID and its filename on disk.</summary>
+    /// <summary>
+    /// Holds the Amplitude sound bank ID and its filename on disk.
+    /// </summary>
     /// <remarks>
     /// <c>BankFilename</c> is the bare filename (including extension) of the
     /// \c .ambank file relative to the Amplitude asset directory, used when
     /// requesting a load or unload of the bank at runtime.
     /// </remarks>
-    class AmplitudeBankData final : public AudioSystemBankData
+    class AMPLITUDEAUDIO_API AmplitudeBankData final : public AudioSystemBankData
     {
-      public:
+    public:
         AmplitudeBankData();
         ~AmplitudeBankData() override = default;
 
@@ -230,5 +209,4 @@ namespace AmplitudeAudio
         /// <summary>Filename of the bank file (e.g. "init.ambank").</summary>
         String BankFilename;
     };
-
 } // namespace AmplitudeAudio

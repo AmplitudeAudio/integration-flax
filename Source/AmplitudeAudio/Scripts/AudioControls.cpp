@@ -12,31 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "AudioControlsScript.h"
+#include "AudioControls.h"
 
 #include <AudioSystem/Core/AudioSystem.h>
+#include <Engine/Content/AssetReference.h>
 #include <Engine/Content/Content.h>
 #include <Engine/Content/JsonAsset.h>
 #include <Engine/Core/Log.h>
 #include <Engine/Core/Types/StringView.h>
 #include <Engine/Serialization/Serialization.h>
 
-#include "AmplitudeAudio/Resources/AudioControlCollectionResource.h"
+#include "../Core/Common.h"
+#include "../Resources/AudioControlCollectionResource.h"
 
 // ============================================================================
-//  AudioControlsScript — Constructor
+//  AudioControls — Constructor
 // ============================================================================
 
-AudioControlsScript::AudioControlsScript(const SpawnParams& params)
+AudioControls::AudioControls(const SpawnParams& params)
     : Script(params)
 {
 }
 
 // ============================================================================
-//  AudioControlsScript — Script lifecycle
+//  AudioControls — Script lifecycle
 // ============================================================================
 
-void AudioControlsScript::OnEnable()
+void AudioControls::OnEnable()
 {
     Script::OnEnable();
 
@@ -44,7 +46,7 @@ void AudioControlsScript::OnEnable()
         Load();
 }
 
-void AudioControlsScript::OnDisable()
+void AudioControls::OnDisable()
 {
     if (_loaded)
         Unload();
@@ -53,42 +55,44 @@ void AudioControlsScript::OnDisable()
 }
 
 // ============================================================================
-//  AudioControlsScript — Load
+//  AudioControls — Load
 // ============================================================================
 
-void AudioControlsScript::Load()
+void AudioControls::Load()
 {
     using namespace AmplitudeAudio;
 
     if (_loaded)
     {
-        LOG(Warning, "[AudioControlsScript] Load() called but controls are already loaded. Path: {0}", ControlsAssetPath);
+        LOG(Warning, "[AudioControls] Load() called but controls are already loaded. Path: {0}", ControlsAssetPath);
         return;
     }
 
     if (ControlsAssetPath.IsEmpty())
     {
-        LOG(Warning, "[AudioControlsScript] Load() called but ControlsAssetPath is empty. Nothing to load.");
+        LOG(Warning, "[AudioControls] Load() called but ControlsAssetPath is empty. Nothing to load.");
         return;
     }
 
-    // Load the JSON asset from the Flax content system.
-    const auto asset = Content::Load<JsonAsset>(ControlsAssetPath);
+    // Load the JSON asset from the Flax content system. AssetReference keeps a
+    // strong reference for the duration of the call so a concurrent unload
+    // cannot free asset->Data under us.
+    AssetReference<JsonAsset> asset = Content::Load<JsonAsset>(ControlsAssetPath);
     if (asset == nullptr)
     {
-        LOG(Error, "[AudioControlsScript] Failed to load controls asset: {0}", ControlsAssetPath);
+        LOG(Error, "[AudioControls] Failed to load controls asset: {0}", ControlsAssetPath);
         return;
     }
 
     if (asset->WaitForLoaded())
     {
-        LOG(Error, "[AudioControlsScript] Controls asset failed to load: {0}", ControlsAssetPath);
+        LOG(Error, "[AudioControls] Controls asset failed to load: {0}", ControlsAssetPath);
         return;
     }
 
     if (asset->Data == nullptr)
     {
-        LOG(Error, "[AudioControlsScript] Controls asset has no data: {0}", ControlsAssetPath);
+        LOG(Error, "[AudioControls] Controls asset has no data: {0}", ControlsAssetPath);
         return;
     }
 
@@ -97,20 +101,23 @@ void AudioControlsScript::Load()
     Array<AudioControlEntry> controls;
     {
         auto&               stream   = *asset->Data;
-        ISerializeModifier* modifier = nullptr;
+        ISerializeModifier* modifier = AmplitudeAudio::GetActiveModifier(asset.Get());
         DESERIALIZE_MEMBER(Controls, controls);
     }
 
     if (controls.IsEmpty())
     {
-        LOG(Warning, "[AudioControlsScript] Controls asset is empty: {0}", ControlsAssetPath);
+        LOG(Warning, "[AudioControls] Controls asset is empty: {0}", ControlsAssetPath);
         return;
     }
 
     AudioSystem* audioSystem = AudioSystem::Get();
     if (audioSystem == nullptr || !audioSystem->IsInitialized())
     {
-        LOG(Error, "[AudioControlsScript] AudioSystem is not available or not initialized.");
+        LOG(Error,
+            "[AudioControls] AudioSystem is not initialized — controls from '{0}' will NOT be registered. "
+            "Ensure AmplitudeAudioPlugin::Initialize runs before this script's OnEnable.",
+            ControlsAssetPath);
         return;
     }
 
@@ -121,20 +128,9 @@ void AudioControlsScript::Load()
         const AudioControlEntry& entry = controls[i];
         auto                     id    = static_cast<AudioSystemDataID>(entry.AmplitudeId);
 
-        // For sound banks, the numeric ID may be 0 if the bank is identified
-        // only by filename. In that case, derive a stable ID from the name.
-        // if (id == INVALID_AUDIO_SYSTEM_ID && entry.Type == AudioControlType::SoundBank
-        //     && !entry.AmplitudeName.IsEmpty())
-        // {
-        //     // Use the entry name hash as a stable, non-zero registration ID.
-        //     id = static_cast<AudioSystemDataID>(GetHash(entry.Name));
-        //     if (id == INVALID_AUDIO_SYSTEM_ID)
-        //         id = 1; // Ensure non-zero in the unlikely event of a zero hash.
-        // }
-
         if (id == INVALID_AUDIO_SYSTEM_ID)
         {
-            LOG(Warning, "[AudioControlsScript] Skipping entry '{0}' with invalid ID.", entry.Name);
+            LOG(Warning, "[AudioControls] Skipping entry '{0}' with invalid ID.", entry.Name);
             continue;
         }
 
@@ -150,7 +146,7 @@ void AudioControlsScript::Load()
                 }
                 else
                 {
-                    LOG(Error, "[AudioControlsScript] Failed to register bank '{0}'.", entry.Name);
+                    LOG(Error, "[AudioControls] Failed to register bank '{0}'.", entry.Name);
                     Delete(data);
                 }
                 break;
@@ -165,7 +161,7 @@ void AudioControlsScript::Load()
                 }
                 else
                 {
-                    LOG(Error, "[AudioControlsScript] Failed to register trigger '{0}'.", entry.Name);
+                    LOG(Error, "[AudioControls] Failed to register trigger '{0}'.", entry.Name);
                     Delete(data);
                 }
                 break;
@@ -180,7 +176,7 @@ void AudioControlsScript::Load()
                 }
                 else
                 {
-                    LOG(Error, "[AudioControlsScript] Failed to register RTPC '{0}'.", entry.Name);
+                    LOG(Error, "[AudioControls] Failed to register RTPC '{0}'.", entry.Name);
                     Delete(data);
                 }
                 break;
@@ -195,7 +191,7 @@ void AudioControlsScript::Load()
                 }
                 else if (data != nullptr)
                 {
-                    LOG(Error, "[AudioControlsScript] Failed to register switch state '{0}'.", entry.Name);
+                    LOG(Error, "[AudioControls] Failed to register switch state '{0}'.", entry.Name);
                     Delete(data);
                 }
                 break;
@@ -210,7 +206,7 @@ void AudioControlsScript::Load()
                 }
                 else
                 {
-                    LOG(Error, "[AudioControlsScript] Failed to register environment '{0}'.", entry.Name);
+                    LOG(Error, "[AudioControls] Failed to register environment '{0}'.", entry.Name);
                     Delete(data);
                 }
                 break;
@@ -225,38 +221,38 @@ void AudioControlsScript::Load()
                 }
                 else
                 {
-                    LOG(Error, "[AudioControlsScript] Failed to register switch '{0}'.", entry.Name);
+                    LOG(Error, "[AudioControls] Failed to register switch '{0}'.", entry.Name);
                     Delete(data);
                 }
                 break;
             }
             case AudioControlType::Invalid:
             default:
-                LOG(Warning, "[AudioControlsScript] Skipping entry '{0}' with unknown type {1}.", entry.Name, static_cast<int>(entry.Type));
+                LOG(Warning, "[AudioControls] Skipping entry '{0}' with unknown type {1}.", entry.Name, static_cast<int>(entry.Type));
                 break;
         }
     }
 
     if (registeredCount > 0)
     {
-        LOG(Info, "[AudioControlsScript] Loaded {0} controls from: {1}", registeredCount, ControlsAssetPath);
+        LOG(Info, "[AudioControls] Loaded {0} controls from: {1}", registeredCount, ControlsAssetPath);
         _loaded = true;
     }
     else
     {
-        LOG(Warning, "[AudioControlsScript] No controls were registered from: {0}", ControlsAssetPath);
+        LOG(Warning, "[AudioControls] No controls were registered from: {0}", ControlsAssetPath);
     }
 }
 
 // ============================================================================
-//  AudioControlsScript — Unload
+//  AudioControls — Unload
 // ============================================================================
 
-void AudioControlsScript::Unload()
+void AudioControls::Unload()
 {
     if (!_loaded)
     {
-        LOG(Warning, "[AudioControlsScript] Unload() called but controls are not loaded.");
+        LOG(Warning, "[AudioControls] Unload() called but controls are not loaded.");
         return;
     }
 
@@ -270,35 +266,39 @@ void AudioControlsScript::Unload()
         for (const auto rtpcId : _registeredRtpcIds)
             audioSystem->UnregisterRtpc(rtpcId);
 
-        for (const auto switchId : _registeredSwitchIds)
-            audioSystem->UnregisterSwitch(switchId);
+        for (const auto envId : _registeredEnvironmentIds)
+            audioSystem->UnregisterEnvironment(envId);
 
+        // SwitchState entries must be unregistered BEFORE their parent Switch,
+        // because the ATL composes switch-state identity from (switchName, stateName)
+        // and freeing the parent switch first leaves child states pointing at a
+        // released wrapper.
         for (const auto ssId : _registeredSwitchStateIds)
             audioSystem->UnregisterSwitchState(ssId);
 
-        for (const auto envId : _registeredEnvironmentIds)
-            audioSystem->UnregisterEnvironment(envId);
+        for (const auto switchId : _registeredSwitchIds)
+            audioSystem->UnregisterSwitch(switchId);
 
         for (const auto bankId : _registeredBankIds)
             audioSystem->UnregisterSoundBank(bankId);
     }
 
-    // _registeredBankIds.Clear();
+    _registeredBankIds.Clear();
     _registeredTriggerIds.Clear();
     _registeredRtpcIds.Clear();
     _registeredSwitchIds.Clear();
     _registeredSwitchStateIds.Clear();
     _registeredEnvironmentIds.Clear();
 
-    LOG(Info, "[AudioControlsScript] Controls unloaded for: {0}", ControlsAssetPath);
+    LOG(Info, "[AudioControls] Controls unloaded for: {0}", ControlsAssetPath);
     _loaded = false;
 }
 
 // ============================================================================
-//  AudioControlsScript — IsLoaded
+//  AudioControls — IsLoaded
 // ============================================================================
 
-bool AudioControlsScript::IsLoaded() const
+bool AudioControls::IsLoaded() const
 {
     return _loaded;
 }

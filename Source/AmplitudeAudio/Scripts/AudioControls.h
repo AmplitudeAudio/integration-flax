@@ -15,7 +15,7 @@
 #pragma once
 
 // ============================================================================
-//  AudioControlsScript — Flax component for loading AudioControlCollections
+//  AudioControls — Flax component for loading AudioControlCollections
 //
 //  Attaches an AudioControlCollection JSON asset to an actor. When
 //  AutoLoad is true the collection is registered with the AudioSystem on
@@ -36,12 +36,19 @@
 /// actor's lifetime. Set ControlsAssetPath to a project-relative path
 /// (e.g. "Content/Sounds/Amplitude/MyControls.json") and leave AutoLoad
 /// enabled to have controls loaded automatically when play starts.
+///
+/// Load-order assumption: Load() requires the AudioSystem to be initialized,
+/// which happens in AmplitudeAudioPlugin::Initialize() via CommitMiddleware().
+/// Because Flax loads plugins before script OnEnable runs, that ordering is
+/// guaranteed in normal play. If Load() runs before the plugin Initialize
+/// (e.g. an out-of-tree controls script with no AmplitudeAudioPlugin
+/// dependency), Load() logs an Error and returns without registering anything.
 /// </remarks>
 API_CLASS(Attributes = "FlaxEngine.Category(\"Audio System/Amplitude\")")
-class AMPLITUDEAUDIO_API AudioControlsScript : public Script
+class AMPLITUDEAUDIO_API AudioControls : public Script
 {
     API_AUTO_SERIALIZATION();
-    DECLARE_SCRIPTING_TYPE(AudioControlsScript);
+    DECLARE_SCRIPTING_TYPE(AudioControls);
 
   public:
     // ========================================================================
@@ -92,7 +99,10 @@ class AMPLITUDEAUDIO_API AudioControlsScript : public Script
   private:
     bool _loaded = false;
 
-    /// <summary>IDs of registered controls, grouped by type for ordered unregistration.</summary>
+    /// <summary>
+    /// IDs of registered controls, grouped by type. Unload() unregisters in
+    /// dependency order: Trigger -> Rtpc -> Environment -> SwitchState -> Switch -> Bank.
+    /// </summary>
     Array<AudioSystemDataID> _registeredBankIds;
     Array<AudioSystemDataID> _registeredTriggerIds;
     Array<AudioSystemDataID> _registeredRtpcIds;

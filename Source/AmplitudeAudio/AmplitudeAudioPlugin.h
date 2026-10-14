@@ -14,13 +14,7 @@
 
 #pragma once
 
-// ============================================================================
-//  AmplitudeAudioPlugin — Flax GamePlugin entry point
-//
-//  This is the class Flax discovers and loads when the AmplitudeAudio plugin
-//  is enabled for a project. Initialize() wires the AmplitudeMiddleware into
-//  the AudioSystem; Deinitialize() tears it back down.
-// ============================================================================
+#include <atomic>
 
 #include <Engine/Scripting/Plugins/GamePlugin.h>
 
@@ -29,36 +23,32 @@ namespace AmplitudeAudio
     class AmplitudeMiddleware;
 }
 
-/// <summary>Main entry point for the Amplitude Audio Flax plugin.</summary>
+/// <summary>
+/// Main entry point for the Amplitude Audio Flax plugin.
+/// </summary>
 /// <remarks>
 /// Flax calls Initialize() after all modules are loaded and Deinitialize()
 /// before they are unloaded. The plugin owns the AmplitudeMiddleware instance
 /// and is responsible for registering and unregistering it with the AudioSystem.
 ///
-/// Configuration is loaded from a well-known JSON asset at
-/// Content/Sounds/Amplitude/Config.json. This asset must contain per-platform
-/// profiles with InitSoundBank and EngineConfigFile entries.
+/// Configuration is loaded from the native Flax game settings
+/// (Amplitude Configuration, edited via Settings > Game Settings). It must
+/// contain per-platform profiles with InitSoundBank and EngineConfigFile entries.
 /// </remarks>
 API_CLASS()
 class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
 {
     DECLARE_SCRIPTING_TYPE(AmplitudeAudioPlugin);
 
-  public:
-    // ========================================================================
-    //  GamePlugin overrides
-    // ========================================================================
-
-    /// <summary>
-    /// Creates the AmplitudeMiddleware instance, loads configuration,
-    ///        and starts the AudioSystem.
-    /// </summary>
     void Initialize() override;
-
-    /// <summary>Unregisters and destroys the AmplitudeMiddleware instance.</summary>
     void Deinitialize() override;
 
-  private:
+private:
+    /// <summary>
+    /// Guards against double initialization when multiple projects reference this plugin.
+    /// </summary>
+    static bool _initialized;
+
     /// <summary>Owned middleware instance. Created in Initialize(), destroyed in Deinitialize().</summary>
     AmplitudeAudio::AmplitudeMiddleware* _middleware = nullptr;
 };

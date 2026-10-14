@@ -12,29 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ============================================================================
-//  AmplitudeHelpers — Core helper utilities for the Amplitude Audio plugin
-//  (implementation)
-// ============================================================================
+#include "FlaxMemoryAllocator.h"
 
-#include "AmplitudeHelpers.h"
-
-#include <Engine/Core/Log.h>
 #include <Engine/Platform/Platform.h>
-#include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
-#include <cstring> // ::memcpy
 
 namespace AmplitudeAudio
 {
-    // ========================================================================
-    //  FlaxMemoryAllocator
-    //
-    //  Every allocation is prefixed with a size header so that Realloc and
-    //  Realign can safely copy only the original number of bytes when growing.
-    //  The header is aligned to at least 16 bytes so that the user pointer
-    //  retains the requested alignment.
-    // ========================================================================
-
     namespace
     {
         struct AllocHeader
@@ -67,9 +50,10 @@ namespace AmplitudeAudio
         {
             if (address == nullptr)
                 return;
+
             Platform::Free(static_cast<uint8*>(address) - kHeaderSize);
         }
-    } // anonymous namespace
+    }
 
     AmVoidPtr FlaxMemoryAllocator::Malloc(eMemoryPoolKind /*pool*/, AmSize size)
     {
@@ -117,69 +101,4 @@ namespace AmplitudeAudio
             return 0;
         return GetHeader(address)->size;
     }
-
-    // ========================================================================
-    //  FlaxLogger
-    // ========================================================================
-
-    void FlaxLogger::Log(eLogMessageLevel level, const char* file, int line, const AmString& message)
-    {
-        // Convert the narrow AmString (std::string) to a Flax StringView for
-        // the LOG_STR macro. We build a wide String on the stack.
-        const ::String flaxMessage(message.c_str());
-
-        switch (level)
-        {
-            case eLogMessageLevel_Debug:
-            case eLogMessageLevel_Info:
-            case eLogMessageLevel_Success:
-                LOG_STR(Info, flaxMessage);
-                break;
-
-            case eLogMessageLevel_Warning:
-                LOG_STR(Warning, flaxMessage);
-                break;
-
-            case eLogMessageLevel_Error:
-                LOG_STR(Error, flaxMessage);
-                break;
-
-            case eLogMessageLevel_Critical:
-                LOG_STR(Fatal, flaxMessage);
-                break;
-
-            default:
-                LOG_STR(Info, flaxMessage);
-                break;
-        }
-    }
-
-    // ========================================================================
-    //  Coordinate conversion helpers
-    // ========================================================================
-
-    AmVector3 FlaxVec3ToAmVec3(const Vector3& vec)
-    {
-        static const CartesianCoordinateSystem flax(
-            CartesianCoordinateSystem::Axis::PositiveX,
-            CartesianCoordinateSystem::Axis::PositiveZ,
-            CartesianCoordinateSystem::Axis::PositiveY);
-
-        const AmVector3 result = {vec.X / 100.0f, vec.Y / 100.0f, vec.Z / 100.0f};
-        return CartesianCoordinateSystem::ConvertToDefault(result, flax);
-    }
-
-    void FlaxTransformToAmplitude(
-        const AudioSystemTransform& transform,
-        AmVector3&                  outLocation,
-        Orientation&                outOrientation)
-    {
-        outLocation = FlaxVec3ToAmVec3(transform.Position);
-
-        const AmVector3 forward = FlaxVec3ToAmVec3(transform.Forward);
-        const AmVector3 up      = FlaxVec3ToAmVec3(transform.Up);
-
-        outOrientation = Orientation(forward, up);
-    }
-
 } // namespace AmplitudeAudio

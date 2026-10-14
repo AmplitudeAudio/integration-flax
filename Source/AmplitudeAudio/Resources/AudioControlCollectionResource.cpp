@@ -12,18 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ============================================================================
-//  AudioControlCollectionResource — implementation
-// ============================================================================
-
 #include "AudioControlCollectionResource.h"
 
 #include <Engine/Core/Log.h>
 #include <Engine/Serialization/Serialization.h>
-
-// ============================================================================
-//  AudioControlCollection — property accessors
-// ============================================================================
 
 const Array<AudioControlEntry>& AudioControlCollection::GetControls() const
 {
@@ -35,10 +27,6 @@ void AudioControlCollection::SetControls(const Array<AudioControlEntry>& value)
     _controls = value;
 }
 
-// ============================================================================
-//  AudioControlCollection — ISerializable
-// ============================================================================
-
 void AudioControlCollection::Serialize(SerializeStream& stream, const void* otherObj)
 {
     const auto* other = static_cast<const AudioControlCollection*>(otherObj);
@@ -49,10 +37,6 @@ void AudioControlCollection::Deserialize(DeserializeStream& stream, ISerializeMo
 {
     DESERIALIZE_MEMBER(Controls, _controls);
 }
-
-// ============================================================================
-//  AudioControlEntryDeserializer
-// ============================================================================
 
 namespace AmplitudeAudio
 {

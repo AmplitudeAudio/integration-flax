@@ -14,28 +14,17 @@
 
 #pragma once
 
-// ============================================================================
-//  AudioControlCollectionResource — Named audio control collection asset
-//
-//  Defines the AudioControlType enum, AudioControlEntry struct, and the
-//  AudioControlCollection class. The collection bundles named audio controls
-//  (triggers, RTPCs, banks, switches, environments) into a single loadable
-//  unit that can be edited in the Flax editor and loaded at runtime.
-// ============================================================================
-
 #include <Engine/Core/Collections/Array.h>
 #include <Engine/Core/ISerializable.h>
 #include <Engine/Core/Types/String.h>
 #include <Engine/Scripting/ScriptingObject.h>
 #include <Engine/Serialization/JsonTools.h>
 
-#include "AmplitudeAudio/Core/AmplitudeAudioData.h"
+#include <AmplitudeAudio/Core/Data.h>
 
-// ============================================================================
-//  AudioControlType
-// ============================================================================
-
-/// <summary>Discriminator for entries stored inside an AudioControlCollection.</summary>
+/// <summary>
+/// Discriminator for entries stored inside an AudioControlCollection.
+/// </summary>
 API_ENUM()
 enum class AudioControlType : uint8
 {
@@ -48,11 +37,9 @@ enum class AudioControlType : uint8
     Environment = 6,
 };
 
-// ============================================================================
-//  AudioControlEntry
-// ============================================================================
-
-/// <summary>A single named audio control stored inside an AudioControlCollection.</summary>
+/// <summary>
+/// A single named audio control stored inside an AudioControlCollection.
+/// </summary>
 /// <remarks>
 /// <c>Name</c> is the authored control label used by editor tooling and runtime
 /// lookup. For switch containers it matches the authored switch token; for
@@ -110,11 +97,9 @@ struct AMPLITUDEAUDIO_API AudioControlEntry : public ISerializable
     String ParentAmplitudeName;
 };
 
-// ============================================================================
-//  AudioControlCollection
-// ============================================================================
-
-/// <summary>An ordered collection of AudioControlEntry values loaded from JSON.</summary>
+/// <summary>
+/// An ordered collection of AudioControlEntry values loaded from JSON.
+/// </summary>
 /// <remarks>
 /// Create via the editor's "New > Audio > Audio Control Collection" context
 /// menu entry.
@@ -126,7 +111,7 @@ class AMPLITUDEAUDIO_API AudioControlCollection : public ScriptingObject, public
 
   public:
     // ========================================================================
-    //  Data access (exposed to editor via API_PROPERTY)
+    //  Data access
     // ========================================================================
 
     /// <summary>The audio control entries in this collection.</summary>
@@ -148,17 +133,12 @@ class AMPLITUDEAUDIO_API AudioControlCollection : public ScriptingObject, public
     Array<AudioControlEntry> _controls;
 };
 
-// ============================================================================
-//  AudioControlEntryDeserializer (internal, not exposed to scripting)
-// ============================================================================
-
 namespace AmplitudeAudio
 {
     using namespace SparkyStudios::Audio::Amplitude;
 
     /// <summary>
-    /// Static helpers that construct Amplitude data wrappers from
-    ///        AudioControlEntry values.
+    /// Static helpers that construct Amplitude data wrappers from AudioControlEntry values.
     /// </summary>
     /// <remarks>
     /// Each method allocates a new wrapper on the heap; the caller takes
@@ -173,8 +153,6 @@ namespace AmplitudeAudio
         static AmplitudeEnvironmentData* DeserializeEnvironmentEntry(const AudioControlEntry& entry);
         static AmplitudeBankData*        DeserializeBankEntry(const AudioControlEntry& entry);
 
-      private:
         AudioControlEntryDeserializer() = delete;
     };
-
 } // namespace AmplitudeAudio

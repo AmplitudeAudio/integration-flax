@@ -12,37 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ============================================================================
-//  AmplitudeConfiguration — implementation
-// ============================================================================
+#include "AmplitudeSettings.h"
 
-#include "AmplitudeConfiguration.h"
-
+#include <Engine/Content/Content.h>
+#include <Engine/Content/JsonAsset.h>
+#include <Engine/Core/Config/GameSettings.h>
+#include <Engine/Core/Log.h>
 #include <Engine/Platform/Platform.h>
+#include <Engine/Scripting/Internal/InternalCalls.h>
 #include <Engine/Serialization/Serialization.h>
 
-// ============================================================================
-//  AmplitudeConfigurationAsset — ISerializable
-// ============================================================================
+IMPLEMENT_GAME_SETTINGS_GETTER(AmplitudeSettings, "Amplitude Configuration");
 
-void AmplitudeConfigurationAsset::Serialize(SerializeStream& stream, const void* otherObj)
+AmplitudeSettings::AmplitudeSettings()
 {
-    const auto* other = static_cast<const AmplitudeConfigurationAsset*>(otherObj);
-    SERIALIZE_MEMBER(Profiles, Profiles);
-    SERIALIZE_MEMBER(ProjectBuildPath, ProjectBuildPath);
-    SERIALIZE_MEMBER(ProjectSourcesPath, ProjectSourcesPath);
 }
 
-void AmplitudeConfigurationAsset::Deserialize(DeserializeStream& stream, ISerializeModifier* modifier)
+void AmplitudeSettings::Apply()
 {
-    DESERIALIZE_MEMBER(Profiles, Profiles);
-    DESERIALIZE_MEMBER(ProjectBuildPath, ProjectBuildPath);
-    DESERIALIZE_MEMBER(ProjectSourcesPath, ProjectSourcesPath);
+    LOG(Info, "[AmplitudeAudio] Configuration settings applied.");
 }
 
-// ============================================================================
-//  AmplitudeAssetProfiles
-// ============================================================================
+DEFINE_INTERNAL_CALL(void)
+AmplitudeSettingsInternal_Apply()
+{
+    auto settings = AmplitudeSettings::Get();
+    if (!settings)
+        return;
+
+    settings->Apply();
+}
 
 namespace AmplitudeAudio
 {
@@ -72,12 +71,14 @@ namespace AmplitudeAudio
         return TEXT("Mobile");
 #elif PLATFORM_WINDOWS || PLATFORM_LINUX || PLATFORM_MAC
         return TEXT("Desktop");
+#elif PLATFORM_WEB
+        return TEXT("Web");
 #else
-        return TEXT("Desktop");
+    return TEXT("Desktop");
 #endif
     }
 
-    void AmplitudeAssetProfiles::LoadFromAsset(
+    void AmplitudeAssetProfiles::LoadFromSettings(
         const Array<AmplitudePlatformProfile>& profiles,
         const String&                          projectBuildPath,
         const String&                          projectSourcesPath)
@@ -91,5 +92,4 @@ namespace AmplitudeAudio
             m_profiles[profile.PlatformName] = profile.Config;
         }
     }
-
 } // namespace AmplitudeAudio
