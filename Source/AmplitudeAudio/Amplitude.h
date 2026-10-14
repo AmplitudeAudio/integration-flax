@@ -17,6 +17,7 @@
 #include <Engine/Scripting/ScriptingType.h>
 
 #include <AmplitudeAudio/Types/AmplitudeSoundBankRef.h>
+#include <AmplitudeAudio/Types/AmplitudeRefs.h>
 
 /// <summary>Global entry point to the Amplitude engine.</summary>
 API_CLASS(Static, Namespace = "AmplitudeAudio")
