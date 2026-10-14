@@ -36,8 +36,8 @@ namespace AmplitudeAudio
     /// <para>
     /// Every allocation is prefixed with a size header so that Realloc and
     /// Realign can safely copy only the original number of bytes when growing.
-    /// The header is aligned to at least 16 bytes so that the user pointer
-    /// retains the requested alignment.
+    /// The user pointer is rounded up to the requested alignment and the header
+    /// sits directly below it, which also stores the block the platform returned.
     /// </para>
     /// </remarks>
     class FlaxMemoryAllocator final : public MemoryAllocator

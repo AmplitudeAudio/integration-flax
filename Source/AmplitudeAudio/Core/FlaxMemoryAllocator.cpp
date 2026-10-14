@@ -14,6 +14,8 @@
 
 #include "FlaxMemoryAllocator.h"
 
+#include <cstdint>
+
 #include <Engine/Platform/Platform.h>
 
 namespace AmplitudeAudio
@@ -23,27 +25,31 @@ namespace AmplitudeAudio
         struct AllocHeader
         {
             AmSize size;
+            void*  raw;
         };
 
-        // Minimum header alignment so user pointer stays well-aligned.
-        constexpr AmSize kHeaderAlignment = 16;
-        constexpr AmSize kHeaderSize      = ((sizeof(AllocHeader) + kHeaderAlignment - 1) / kHeaderAlignment) * kHeaderAlignment;
+        constexpr uint64 kMinAlignment = 16;
 
+        // The header sits directly below the aligned user pointer, so the block reserves room for both the header and the alignment padding.
         AmVoidPtr AllocWithHeader(AmSize size, uint64 alignment)
         {
-            const AmSize totalSize       = kHeaderSize + size;
-            const uint64 actualAlignment = alignment > kHeaderAlignment ? alignment : kHeaderAlignment;
-            auto*        raw             = static_cast<uint8*>(Platform::Allocate(static_cast<uint64>(totalSize), actualAlignment));
+            const uint64 actualAlignment = alignment > kMinAlignment ? alignment : kMinAlignment;
+            auto*        raw             = static_cast<uint8*>(Platform::Allocate(static_cast<uint64>(size + actualAlignment + sizeof(AllocHeader)), kMinAlignment));
             if (raw == nullptr)
                 return nullptr;
-            auto* header = reinterpret_cast<AllocHeader*>(raw);
+
+            const uintptr_t base = reinterpret_cast<uintptr_t>(raw) + sizeof(AllocHeader);
+            const uintptr_t user = (base + actualAlignment - 1) & ~static_cast<uintptr_t>(actualAlignment - 1);
+
+            auto* header = reinterpret_cast<AllocHeader*>(user - sizeof(AllocHeader));
             header->size = size;
-            return raw + kHeaderSize;
+            header->raw  = raw;
+            return reinterpret_cast<AmVoidPtr>(user);
         }
 
         AllocHeader* GetHeader(AmVoidPtr address)
         {
-            return reinterpret_cast<AllocHeader*>(static_cast<uint8*>(address) - kHeaderSize);
+            return reinterpret_cast<AllocHeader*>(static_cast<uint8*>(address) - sizeof(AllocHeader));
         }
 
         void FreeWithHeader(AmVoidPtr address)
@@ -51,7 +57,7 @@ namespace AmplitudeAudio
             if (address == nullptr)
                 return;
 
-            Platform::Free(static_cast<uint8*>(address) - kHeaderSize);
+            Platform::Free(GetHeader(address)->raw);
         }
     }
 
