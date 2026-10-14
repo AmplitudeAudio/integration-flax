@@ -1,0 +1,66 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     `http://www.apache.org/licenses/LICENSE-2.0`
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#pragma once
+
+#include <AmplitudeAudio/Core/Cpp20Compat.h>
+
+#include <Engine/Level/Actor.h>
+
+#include <SparkyStudios/Audio/Amplitude/Core/Entity.h>
+
+#include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
+
+/// <summary>An Amplitude entity. Usually attached to a character or object that emits sound.</summary>
+API_CLASS(Namespace = "AmplitudeAudio", Attributes = "ActorContextMenu(\"New/Amplitude/Entity\"), ActorToolbox(\"Other\")")
+class AMPLITUDEAUDIO_API AmplitudeEntity : public Actor, public AmplitudeAudio::IAmplitudeServiceClient
+{
+    DECLARE_SCENE_OBJECT(AmplitudeEntity);
+
+public:
+    /// <summary>Directivity, from 0 (omnidirectional) to 1 (cardioid).</summary>
+    API_FIELD(Attributes = "EditorOrder(0), Limit(0, 1, 0.01f)")
+    float Directivity = 1.0f;
+
+    /// <summary>Sharpness of the directivity pattern.</summary>
+    API_FIELD(Attributes = "EditorOrder(1), Limit(0, 10, 0.01f)")
+    float Sharpness = 1.0f;
+
+    /// <summary>Whether the SDK entity exists (the engine is running and this actor is enabled).</summary>
+    API_PROPERTY()
+    bool IsValid() const;
+
+    /// <summary>Finds the nearest AmplitudeEntity on <paramref name="from"/> or its ancestors.</summary>
+    API_FUNCTION()
+    static AmplitudeEntity* FindNearest(Actor* from);
+
+    /// <summary>Returns the SDK entity handle.</summary>
+    const SparkyStudios::Audio::Amplitude::Entity& GetHandle() const;
+
+    void OnEngineStarted() override;
+    void OnEngineStopping() override;
+
+    // Actor
+    void OnEnable() override;
+    void OnDisable() override;
+    void OnTransformChanged() override;
+    void Serialize(SerializeStream& stream, const void* otherObj) override;
+    void Deserialize(DeserializeStream& stream, ISerializeModifier* modifier) override;
+
+private:
+    void PushState() const;
+
+    SparkyStudios::Audio::Amplitude::Entity _entity;
+    bool _registered = false;
+};
