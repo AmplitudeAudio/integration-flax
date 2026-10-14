@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using AmplitudeAudio;
 using FlaxEditor;
 using FlaxEditor.Content.Settings;
 using FlaxEngine;
@@ -34,6 +36,20 @@ namespace AmplitudeAudioEditor
         public static AmplitudeSettings Get()
         {
             return GameSettings.Load<AmplitudeSettings>();
+        }
+
+        /// <summary>
+        /// Returns the profile for <paramref name="platform"/>, or the default profile when none matches. Mirrors the C++ AmplitudeSettings::GetProfile.
+        /// </summary>
+        public static AmplitudePlatformProfile GetProfile(AmplitudeSettings settings, PlatformType platform)
+        {
+            foreach (var profile in settings.Profiles ?? Array.Empty<AmplitudePlatformProfile>())
+            {
+                if (profile.Platform == platform)
+                    return profile;
+            }
+
+            return settings.DefaultProfile;
         }
 
         /// <summary>

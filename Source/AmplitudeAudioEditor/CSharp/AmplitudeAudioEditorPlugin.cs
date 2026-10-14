@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AmplitudeAudioEditor.Cooking;
 using FlaxEditor;
 using FlaxEngine;
 using FlaxEditor.Content.Settings;
@@ -39,6 +40,7 @@ namespace AmplitudeAudioEditor
 
             _assetProxies = new AmplitudeAssetProxies();
             _assetProxies.Register();
+            AmplitudeCooker.Register();
 
             var asset = GameSettings.LoadAsset<AmplitudeSettings>();
             if (asset == null)
@@ -57,6 +59,7 @@ namespace AmplitudeAudioEditor
                 return;
             }
 
+            AmplitudeCooker.Unregister();
             _assetProxies?.Unregister();
             _assetProxies = null;
 
