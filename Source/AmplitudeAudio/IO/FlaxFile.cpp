@@ -67,7 +67,8 @@ namespace AmplitudeAudio
         MapOpenMode(mode, flaxMode, flaxAccess);
 
         const ::String flaxPath = AmOsStringToFlaxString(path);
-        m_handle                = ::File::Open(flaxPath, flaxMode, flaxAccess);
+        // Shared so a package can be opened again while its header handle is still held.
+        m_handle                = ::File::Open(flaxPath, flaxMode, flaxAccess, FileShare::All);
         // m_handle is nullptr when the open fails; IsValid() propagates this.
     }
 
