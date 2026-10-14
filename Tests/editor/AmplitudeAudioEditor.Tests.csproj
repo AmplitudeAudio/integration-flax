@@ -9,6 +9,11 @@
   <ItemGroup>
     <!-- Links the Flax-free sources only; the rest of the editor module needs the Flax runtime. -->
     <Compile Include="../../Source/AmplitudeAudioEditor/CSharp/Cooking/AmpkTool.cs" Link="AmpkTool.cs" />
+    <Compile Include="../../Source/AmplitudeAudioEditor/CSharp/Project/AmplitudeProjectIndex.cs" Link="AmplitudeProjectIndex.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures/**/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
