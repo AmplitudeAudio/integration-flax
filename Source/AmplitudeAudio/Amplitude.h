@@ -18,6 +18,10 @@
 
 #include <AmplitudeAudio/Types/AmplitudeSoundBankRef.h>
 #include <AmplitudeAudio/Types/AmplitudeRefs.h>
+#include <AmplitudeAudio/Types/AmplitudeChannel.h>
+#include <AmplitudeAudio/Types/AmplitudeEventHandle.h>
+
+class AmplitudeEntity;
 
 /// <summary>Global entry point to the Amplitude engine.</summary>
 API_CLASS(Static, Namespace = "AmplitudeAudio")
@@ -51,4 +55,76 @@ public:
     /// <summary>Whether the bank and its sound files are loaded.</summary>
     API_FUNCTION()
     static bool IsSoundBankLoaded(const AmplitudeSoundBankRef& bank);
+
+    /// <summary>Plays a sound object at the default listener position.</summary>
+    API_FUNCTION()
+    static AmplitudeChannel* Play(const AmplitudeSoundObjectRef& sound);
+
+    /// <summary>Plays a sound object on an entity.</summary>
+    API_FUNCTION()
+    static AmplitudeChannel* Play(const AmplitudeSoundObjectRef& sound, AmplitudeEntity* entity);
+
+    /// <summary>Plays a sound object at a world position.</summary>
+    API_FUNCTION()
+    static AmplitudeChannel* PlayAt(const AmplitudeSoundObjectRef& sound, const Vector3& position);
+
+    /// <summary>Triggers an event on an entity.</summary>
+    API_FUNCTION()
+    static AmplitudeEventHandle* TriggerEvent(const AmplitudeEventRef& ev, AmplitudeEntity* entity);
+
+    /// <summary>Cancels all events on an entity.</summary>
+    API_FUNCTION()
+    static void CancelEvents(AmplitudeEntity* entity);
+
+    /// <summary>Cancels all events globally.</summary>
+    API_FUNCTION()
+    static void CancelAllEvents();
+
+    /// <summary>Sets an RTPC value.</summary>
+    API_FUNCTION()
+    static void SetRtpcValue(const AmplitudeRtpcRef& rtpc, double value);
+
+    /// <summary>Gets an RTPC value.</summary>
+    API_FUNCTION()
+    static double GetRtpcValue(const AmplitudeRtpcRef& rtpc);
+
+    /// <summary>Resets an RTPC to its default value.</summary>
+    API_FUNCTION()
+    static void ResetRtpcValue(const AmplitudeRtpcRef& rtpc);
+
+    /// <summary>Sets a switch state.</summary>
+    API_FUNCTION()
+    static void SetSwitchState(const AmplitudeSwitchRef& switchRef, const AmplitudeSwitchStateRef& state);
+
+    /// <summary>Gets the current switch state.</summary>
+    API_FUNCTION()
+    static AmplitudeSwitchStateRef GetSwitchState(const AmplitudeSwitchRef& switchRef);
+
+    /// <summary>Sets the master gain (0..1).</summary>
+    API_FUNCTION()
+    static void SetMasterGain(float value);
+
+    /// <summary>Gets the master gain.</summary>
+    API_PROPERTY()
+    static float GetMasterGain();
+
+    /// <summary>Sets whether the engine is muted.</summary>
+    API_FUNCTION()
+    static void SetIsMuted(bool value);
+
+    /// <summary>Gets whether the engine is muted.</summary>
+    API_PROPERTY()
+    static bool GetIsMuted();
+
+    /// <summary>Sets whether the engine is paused.</summary>
+    API_FUNCTION()
+    static void SetIsPaused(bool value);
+
+    /// <summary>Gets whether the engine is paused.</summary>
+    API_PROPERTY()
+    static bool GetIsPaused();
+
+    /// <summary>Stops all playback.</summary>
+    API_FUNCTION()
+    static void StopAll();
 };
