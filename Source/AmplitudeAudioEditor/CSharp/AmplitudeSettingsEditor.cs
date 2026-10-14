@@ -13,17 +13,21 @@
 // limitations under the License.
 
 using FlaxEditor;
+using FlaxEditor.Content.Settings;
 using FlaxEngine;
 
-namespace FlaxEditor.Content.Settings
+namespace AmplitudeAudioEditor
 {
     /// <summary>
-    /// Native Flax game settings that store per-platform Amplitude configuration.
-    /// Provides per-platform profiles and Amplitude project paths used by the
-    /// Amplitude Audio middleware at runtime and by the controls generator in the editor.
+    /// Editor-side helpers for the native <see cref="AmplitudeSettings"/> game settings.
     /// </summary>
-    public sealed partial class AmplitudeSettings : SettingsBase
+    public static class AmplitudeSettingsEditor
     {
+        /// <summary>
+        /// Key of the settings in the game settings' custom settings.
+        /// </summary>
+        public const string SettingsName = "Amplitude Settings";
+
         /// <summary>
         /// Gets the instance of the settings asset (default value if missing).
         /// </summary>
@@ -45,7 +49,7 @@ namespace FlaxEditor.Content.Settings
                 return;
             }
             var asset = FlaxEngine.Content.LoadAsync<JsonAsset>(path);
-            GameSettings.SetCustomSettings("Amplitude Audio", asset);
+            GameSettings.SetCustomSettings(SettingsName, asset);
         }
     }
 }

@@ -15,130 +15,132 @@
 #pragma once
 
 #include <Engine/Core/Collections/Array.h>
-#include <Engine/Core/Collections/Dictionary.h>
 #include <Engine/Core/Config/Settings.h>
 #include <Engine/Core/ISerializable.h>
 #include <Engine/Core/Types/String.h>
-#include <Engine/Scripting/ScriptingObject.h>
-#include <Engine/Serialization/JsonTools.h>
+#include <Engine/Platform/Defines.h>
+#include <Engine/Scripting/ScriptingType.h>
 
-/// <summary>Per-platform Amplitude configuration.</summary>
-/// <remarks>
-/// Groups the two filenames that the plugin needs at startup: the initial
-/// sound bank and the Amplitude engine config file.
-/// </remarks>
-API_STRUCT()
-struct AMPLITUDEAUDIO_API AmplitudeConfiguration : public ISerializable
+#include <AmplitudeAudio/Types/AmplitudeSoundBankRef.h>
+
+/// <summary>How the Amplitude project build ships with cooked games.</summary>
+API_ENUM(Namespace = "AmplitudeAudio")
+enum class AmplitudePackagingMode
 {
-    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeConfiguration);
-    API_AUTO_SERIALIZATION();
+    /// <summary>Copy the build folder as is.</summary>
+    LooseFiles = 0,
 
-    /// <summary>
-    /// Filename of the initial sound bank to load at startup.
-    /// Example: "init.ambank"
-    /// </summary>
-    API_FIELD(Attributes = "EditorOrder(0)")
-    String InitSoundBank;
-
-    /// <summary>
-    /// Filename of the Amplitude engine config file.
-    /// Example: "pc.amconfig"
-    /// </summary>
-    API_FIELD(Attributes = "EditorOrder(1)")
-    String EngineConfigFile;
+    /// <summary>Package the build folder into a single .ampk file with the ampk tool.</summary>
+    Ampk = 1,
 };
 
-/// <summary>
-/// A named platform profile binding a platform name to its configuration.
-/// </summary>
-API_STRUCT()
+/// <summary>Compression used for .ampk packages. Values match the ampk <c>-c</c> option.</summary>
+API_ENUM(Namespace = "AmplitudeAudio")
+enum class AmplitudeCompression
+{
+    /// <summary>No compression.</summary>
+    None = 0,
+
+    /// <summary>ZLib compression.</summary>
+    ZLib = 1,
+};
+
+/// <summary>An Amplitude plugin library to load, by name.</summary>
+/// <remarks>A struct, not a plain String: Flax's C# bindings can't marshal Array&lt;String&gt; inside an API_STRUCT.</remarks>
+API_STRUCT(Namespace = "AmplitudeAudio")
+struct AMPLITUDEAUDIO_API AmplitudePlugin : public ISerializable
+{
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudePlugin);
+    API_AUTO_SERIALIZATION();
+
+    /// <summary>Plugin library name, as passed to the engine's plugin loader.</summary>
+    API_FIELD()
+    String Name;
+};
+
+/// <summary>A folder searched for Amplitude plugin libraries, relative to <c>Content/Sounds/Amplitude</c>.</summary>
+/// <remarks>A struct, not a plain String: Flax's C# bindings can't marshal Array&lt;String&gt; inside an API_STRUCT.</remarks>
+API_STRUCT(Namespace = "AmplitudeAudio")
+struct AMPLITUDEAUDIO_API AmplitudePluginSearchPath : public ISerializable
+{
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudePluginSearchPath);
+    API_AUTO_SERIALIZATION();
+
+    /// <summary>Folder relative to Content/Sounds/Amplitude.</summary>
+    API_FIELD()
+    String Path;
+};
+
+/// <summary>Amplitude startup configuration for one platform.</summary>
+API_STRUCT(Namespace = "AmplitudeAudio")
 struct AMPLITUDEAUDIO_API AmplitudePlatformProfile : public ISerializable
 {
     DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudePlatformProfile);
     API_AUTO_SERIALIZATION();
 
-    /// <summary>Platform name (e.g. "Desktop", "Mobile").</summary>
+    /// <summary>Platform this profile applies to. Ignored on the default profile.</summary>
     API_FIELD(Attributes = "EditorOrder(0)")
-    String PlatformName;
+    PlatformType Platform = PlatformType::Windows;
 
-    /// <summary>Configuration for this platform.</summary>
+    /// <summary>Engine configuration file, relative to the project build folder (e.g. <c>pc.config.amconfig</c>).</summary>
     API_FIELD(Attributes = "EditorOrder(1)")
-    AmplitudeConfiguration Config;
+    String EngineConfigFile;
+
+    /// <summary>Banks loaded at startup, before any scene.</summary>
+    API_FIELD(Attributes = "EditorOrder(2)")
+    Array<AmplitudeSoundBankRef> InitSoundBanks;
+
+    /// <summary>Amplitude plugin libraries to load before the engine initializes.</summary>
+    API_FIELD(Attributes = "EditorOrder(3)")
+    Array<AmplitudePlugin> Plugins;
+
+    /// <summary>Folders searched for plugin libraries, relative to <c>Content/Sounds/Amplitude</c>. Always deployed as loose files.</summary>
+    API_FIELD(Attributes = "EditorOrder(4)")
+    Array<AmplitudePluginSearchPath> PluginSearchPaths;
 };
 
-/// <summary>
-/// Flax game settings that store per-platform Amplitude configuration.
-/// </summary>
-/// <remarks>
-/// Create via the editor's Game Settings window (Settings > Game Settings)
-/// or via "New > Audio System > Amplitude > Settings" context menu.
-/// Contains an array of platform profiles and optional Amplitude project paths.
-/// </remarks>
-API_CLASS(sealed, Namespace = "FlaxEditor.Content.Settings", Attributes = "ContentContextMenu(\"New/Audio System/Amplitude/Settings\")")
+/// <summary>Amplitude Audio settings, stored in the game settings under "Amplitude Settings".</summary>
+API_CLASS(sealed, Namespace = "FlaxEditor.Content.Settings", Attributes = "ContentContextMenu(\"New/Amplitude/Settings\")")
 class AMPLITUDEAUDIO_API AmplitudeSettings : public SettingsBase
 {
     DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeSettings);
     API_AUTO_SERIALIZATION();
 
-    AmplitudeSettings();
+public:
+    /// <summary>Amplitude project sources, relative to <c>Content/Sounds/Amplitude</c>. Editor only.</summary>
+    API_FIELD(Attributes = "EditorOrder(0), EditorDisplay(\"Project\")")
+    String ProjectSourcesPath = TEXT("sources");
 
-    /// <summary>Per-platform configuration profiles.</summary>
-    API_FIELD(Attributes = "EditorOrder(0)")
+    /// <summary>Amplitude project build, relative to <c>Content/Sounds/Amplitude</c>.</summary>
+    API_FIELD(Attributes = "EditorOrder(1), EditorDisplay(\"Project\")")
+    String ProjectBuildPath = TEXT("build");
+
+    /// <summary>Profile used when no entry in Profiles matches the running platform.</summary>
+    API_FIELD(Attributes = "EditorOrder(10), EditorDisplay(\"Profiles\")")
+    AmplitudePlatformProfile DefaultProfile;
+
+    /// <summary>Per-platform profiles; the first entry matching the running platform wins.</summary>
+    API_FIELD(Attributes = "EditorOrder(11), EditorDisplay(\"Profiles\")")
     Array<AmplitudePlatformProfile> Profiles;
 
-    /// <summary>
-    /// Path to the Amplitude project build output, relative to kAssetBasePath.
-    /// At runtime, the Amplitude file system base path is set to {kAssetBasePath}/{ProjectBuildPath}.
-    /// Example: "build" if built assets are at Content/Sounds/Amplitude/build/
-    /// </summary>
-    API_FIELD(Attributes = "EditorOrder(1)")
-    String ProjectBuildPath;
+    /// <summary>How the project build ships with cooked games.</summary>
+    API_FIELD(Attributes = "EditorOrder(20), EditorDisplay(\"Cooking\")")
+    AmplitudePackagingMode PackagingMode = AmplitudePackagingMode::LooseFiles;
 
-    /// <summary>
-    /// Path to the Amplitude project sources, relative to kAssetBasePath.
-    /// Used by the editor controls generator to scan for audio control definitions.
-    /// Example: "sources" if source JSON files are at Content/Sounds/Amplitude/sources/
-    /// </summary>
-    API_FIELD(Attributes = "EditorOrder(2)")
-    String ProjectSourcesPath;
+    /// <summary>Path to the ampk executable. When empty, <c>$AM_SDK_PATH/bin</c> then <c>PATH</c> are searched.</summary>
+    API_FIELD(Attributes = "EditorOrder(21), EditorDisplay(\"Cooking\")")
+    String AmpkToolPath;
 
-    /// <returns>The global singleton instance.</returns>
+    /// <summary>Compression used for .ampk packages.</summary>
+    API_FIELD(Attributes = "EditorOrder(22), EditorDisplay(\"Cooking\")")
+    AmplitudeCompression Compression = AmplitudeCompression::None;
+
+    /// <summary>Compression block size, in KB.</summary>
+    API_FIELD(Attributes = "EditorOrder(23), EditorDisplay(\"Cooking\"), Limit(1)")
+    int32 BlockSize = 64;
+
+    /// <summary>Returns the profile for <paramref name="platform"/>, or DefaultProfile when none matches.</summary>
+    AmplitudePlatformProfile GetProfile(PlatformType platform) const;
+
     DECLARE_SETTINGS_GETTER(AmplitudeSettings);
-
-    /// <summary>
-    /// Applies the settings to the Amplitude middleware.
-    /// </summary>
-    void Apply() override;
 };
-
-namespace AmplitudeAudio
-{
-    /// <summary>A named map of per-platform AmplitudeConfiguration values.</summary>
-    /// <remarks>Used internally by the middleware to store loaded configuration.</remarks>
-    class AmplitudeAssetProfiles
-    {
-    public:
-        AmplitudeAssetProfiles()  = default;
-        ~AmplitudeAssetProfiles() = default;
-
-        void                                        Add(const String& platformName, const AmplitudeConfiguration& config);
-        [[nodiscard]] const AmplitudeConfiguration* Get(const String& platformName) const;
-        [[nodiscard]] static String                 GetCurrentPlatform();
-
-        /// <summary>Build output path, relative to kAssetBasePath. Used at runtime.</summary>
-        [[nodiscard]] const String& GetProjectBuildPath() const;
-
-        /// <summary>Source project path, relative to kAssetBasePath. Used by editor controls generator.</summary>
-        [[nodiscard]] const String& GetProjectSourcesPath() const;
-
-        /// <summary>Populates this object from settings data.</summary>
-        void LoadFromSettings(const Array<AmplitudePlatformProfile>& profiles,
-                              const String&                          projectBuildPath,
-                              const String&                          projectSourcesPath);
-
-    private:
-        Dictionary<String, AmplitudeConfiguration> m_profiles;
-        String                                     m_projectBuildPath;
-        String                                     m_projectSourcesPath;
-    };
-} // namespace AmplitudeAudio

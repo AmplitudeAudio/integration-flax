@@ -17,68 +17,17 @@
 #include <Engine/Content/Content.h>
 #include <Engine/Content/JsonAsset.h>
 #include <Engine/Core/Config/GameSettings.h>
-#include <Engine/Core/Log.h>
-#include <Engine/Platform/Platform.h>
 #include <Engine/Serialization/Serialization.h>
 
-IMPLEMENT_GAME_SETTINGS_GETTER(AmplitudeSettings, "Amplitude Configuration");
+IMPLEMENT_GAME_SETTINGS_GETTER(AmplitudeSettings, "Amplitude Settings");
 
-AmplitudeSettings::AmplitudeSettings()
+AmplitudePlatformProfile AmplitudeSettings::GetProfile(PlatformType platform) const
 {
+    for (const AmplitudePlatformProfile& profile : Profiles)
+    {
+        if (profile.Platform == platform)
+            return profile;
+    }
+
+    return DefaultProfile;
 }
-
-void AmplitudeSettings::Apply()
-{
-    LOG(Info, "[AmplitudeAudio] Configuration settings applied.");
-}
-
-namespace AmplitudeAudio
-{
-    void AmplitudeAssetProfiles::Add(const String& platformName, const AmplitudeConfiguration& config)
-    {
-        m_profiles[platformName] = config;
-    }
-
-    const AmplitudeConfiguration* AmplitudeAssetProfiles::Get(const String& platformName) const
-    {
-        return m_profiles.TryGet(platformName);
-    }
-
-    const String& AmplitudeAssetProfiles::GetProjectBuildPath() const
-    {
-        return m_projectBuildPath;
-    }
-
-    const String& AmplitudeAssetProfiles::GetProjectSourcesPath() const
-    {
-        return m_projectSourcesPath;
-    }
-
-    String AmplitudeAssetProfiles::GetCurrentPlatform()
-    {
-#if PLATFORM_ANDROID || PLATFORM_IOS
-        return TEXT("Mobile");
-#elif PLATFORM_WINDOWS || PLATFORM_LINUX || PLATFORM_MAC
-        return TEXT("Desktop");
-#elif PLATFORM_WEB
-        return TEXT("Web");
-#else
-    return TEXT("Desktop");
-#endif
-    }
-
-    void AmplitudeAssetProfiles::LoadFromSettings(
-        const Array<AmplitudePlatformProfile>& profiles,
-        const String&                          projectBuildPath,
-        const String&                          projectSourcesPath)
-    {
-        m_profiles.Clear();
-        m_projectBuildPath   = projectBuildPath;
-        m_projectSourcesPath = projectSourcesPath;
-
-        for (const auto& profile : profiles)
-        {
-            m_profiles[profile.PlatformName] = profile.Config;
-        }
-    }
-} // namespace AmplitudeAudio

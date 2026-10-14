@@ -31,7 +31,7 @@ namespace AmplitudeAudioEditor
         /// </summary>
         public void Register()
         {
-            _settingsProxy = new CustomSettingsProxy(typeof(AmplitudeSettings), "Amplitude Configuration", Editor.Instance.Icons.AudioSettings128);
+            _settingsProxy = new CustomSettingsProxy(typeof(AmplitudeSettings), AmplitudeSettingsEditor.SettingsName, Editor.Instance.Icons.AudioSettings128);
             Editor.Instance.ContentDatabase.AddProxy(_settingsProxy);
 
             Editor.Instance.ContentDatabase.Rebuild(true);
