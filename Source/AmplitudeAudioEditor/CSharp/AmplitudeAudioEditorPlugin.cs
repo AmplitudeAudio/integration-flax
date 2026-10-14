@@ -21,7 +21,7 @@ namespace AmplitudeAudioEditor
     /// <summary>
     /// C# editor plugin for the Amplitude Audio integration.
     /// Registers the Amplitude Settings asset proxy with the content
-    /// database and wires up play-mode event callbacks.
+    /// database.
     /// </summary>
     public partial class AmplitudeAudioEditorPlugin : EditorPlugin
     {
@@ -40,9 +40,6 @@ namespace AmplitudeAudioEditor
             _assetProxies = new AmplitudeAssetProxies();
             _assetProxies.Register();
 
-            Editor.PlayModeBegin += OnPlayModeBegin;
-            Editor.PlayModeEnd += OnPlayModeEnd;
-
             var asset = GameSettings.LoadAsset<AmplitudeSettings>();
             if (asset == null)
                 AmplitudeSettingsEditor.Save(new AmplitudeSettings());
@@ -60,9 +57,6 @@ namespace AmplitudeAudioEditor
                 return;
             }
 
-            Editor.PlayModeBegin -= OnPlayModeBegin;
-            Editor.PlayModeEnd -= OnPlayModeEnd;
-
             _assetProxies?.Unregister();
             _assetProxies = null;
 
@@ -72,12 +66,5 @@ namespace AmplitudeAudioEditor
             base.DeinitializeEditor();
         }
 
-        private void OnPlayModeBegin()
-        {
-        }
-
-        private void OnPlayModeEnd()
-        {
-        }
     }
 }

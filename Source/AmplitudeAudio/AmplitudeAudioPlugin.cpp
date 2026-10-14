@@ -18,9 +18,7 @@
 #include <AmplitudeAudio/Core/Cpp20Compat.h>
 // clang-format on
 
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
-
-#include <AmplitudeAudio/Core/FlaxMemoryAllocator.h>
+#include <AmplitudeAudio/Amplitude.h>
 
 bool AmplitudeAudioPlugin::_initialized = false;
 
@@ -41,16 +39,17 @@ void AmplitudeAudioPlugin::Initialize()
     if (_initialized)
         return;
 
-    // Must run before anything allocates through the SDK.
-    SparkyStudios::Audio::Amplitude::MemoryManager::Initialize(std::make_unique<AmplitudeAudio::FlaxMemoryAllocator>());
     _initialized = true;
+
+    // In the editor Flax initializes game plugins only for Play sessions, so the engine follows Play there.
+    Amplitude::Startup();
 }
 
 void AmplitudeAudioPlugin::Deinitialize()
 {
     if (_initialized)
     {
-        SparkyStudios::Audio::Amplitude::MemoryManager::Deinitialize();
+        Amplitude::Shutdown();
         _initialized = false;
     }
 
