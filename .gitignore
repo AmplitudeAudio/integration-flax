@@ -14,6 +14,7 @@ imgui.ini
 
 # Ignore Visual Studio project files (generated locally)
 *.csproj
+!Tests/**/*.csproj
 *.sln
 launchSettings.json
 
@@ -56,3 +57,7 @@ _ReSharper*/
 # Ignore Nuget packages folder
 packages/
 .claude/worktrees
+
+# Unit test build outputs
+Tests/editor/bin/
+Tests/editor/obj/
