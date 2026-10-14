@@ -36,6 +36,7 @@
 #include <AmplitudeAudio/Core/Helpers.h>
 #include <AmplitudeAudio/IO/FlaxFileSystem.h>
 #include <AmplitudeAudio/IO/FlaxLogger.h>
+#include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
 
 namespace AmplitudeAudio
 {
@@ -163,6 +164,11 @@ namespace AmplitudeAudio
 
         m_running = true;
         LOG(Info, "[Amplitude] Engine started with config '{0}'.", profile.EngineConfigFile);
+
+        // Notify clients that the engine has started
+        for (IAmplitudeServiceClient* client : m_clients)
+            client->OnEngineStarted();
+
         return true;
     }
 
@@ -172,6 +178,10 @@ namespace AmplitudeAudio
 
         if (m_running)
         {
+            // Notify clients before shutting down; handles are still valid
+            for (IAmplitudeServiceClient* client : m_clients)
+                client->OnEngineStopping();
+
             ::Engine::Update.Unbind<&AmplitudeService::OnEngineUpdate>();
             ::Engine::Pause.Unbind<&AmplitudeService::OnEnginePause>();
             ::Engine::Unpause.Unbind<&AmplitudeService::OnEngineUnpause>();
@@ -239,6 +249,15 @@ namespace AmplitudeAudio
         ApplyPause();
         m_banks.Update();
         m_engine->AdvanceFrame(::Time::Update.UnscaledDeltaTime.GetTotalMilliseconds());
+
+        // Dispatch posted work on the main thread
+        Array<Function<void()>> posted;
+        {
+            ScopeLock lock(m_postLock);
+            m_posted.Swap(posted);
+        }
+        for (Function<void()>& work : posted)
+            work();
     }
 
     bool AmplitudeService::IsRunning() const
@@ -288,6 +307,34 @@ namespace AmplitudeAudio
     bool AmplitudeService::IsSoundBankLoaded(const ::String& file) const
     {
         return m_running && m_banks.IsLoaded(file);
+    }
+
+    void AmplitudeService::AddClient(IAmplitudeServiceClient* client)
+    {
+        m_clients.AddUnique(client);
+        if (m_running)
+            client->OnEngineStarted();
+    }
+
+    void AmplitudeService::RemoveClient(IAmplitudeServiceClient* client)
+    {
+        m_clients.Remove(client);
+    }
+
+    SparkyStudios::Audio::Amplitude::Engine* AmplitudeService::GetEngine() const
+    {
+        return m_running ? m_engine : nullptr;
+    }
+
+    SparkyStudios::Audio::Amplitude::AmObjectID AmplitudeService::AllocateId()
+    {
+        return m_nextId.fetch_add(1);
+    }
+
+    void AmplitudeService::Post(::Function<void()> work)
+    {
+        ScopeLock lock(m_postLock);
+        m_posted.Add(MoveTemp(work));
     }
 
     void AmplitudeService::OnEngineUpdate()

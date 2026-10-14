@@ -33,6 +33,12 @@ namespace AmplitudeAudio
     /// <summary>Converts a Flax Vector3 to an Amplitude AmVector3.</summary>
     AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
 
+    /// <summary>Converts seconds to the SDK's time unit (milliseconds).</summary>
+    inline AmTime SecondsToAmTime(float seconds)
+    {
+        return static_cast<AmTime>(seconds) * 1000.0;
+    }
+
     /// <summary>Converts a Flax string to a narrow std::string.</summary>
     std::string FlaxStringToStdString(const ::String& value);
 

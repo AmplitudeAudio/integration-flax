@@ -18,15 +18,19 @@
 #include <AmplitudeAudio/Core/Cpp20Compat.h>
 // clang-format on
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
+#include <Engine/Core/Collections/Array.h>
 #include <Engine/Core/Types/String.h>
+#include <Engine/Platform/CriticalSection.h>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Engine.h>
 #include <SparkyStudios/Audio/Amplitude/IO/FileSystem.h>
 
 #include <AmplitudeAudio/Core/BankRegistry.h>
+#include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
 
 struct AmplitudePlatformProfile;
 
@@ -70,7 +74,26 @@ namespace AmplitudeAudio
         /// <summary>Whether the bank and its sound files are loaded.</summary>
         [[nodiscard]] bool IsSoundBankLoaded(const ::String& file) const;
 
+        /// <summary>Registers a client that will be notified when the engine starts and stops.</summary>
+        void AddClient(IAmplitudeServiceClient* client);
+
+        /// <summary>Unregisters a client.</summary>
+        void RemoveClient(IAmplitudeServiceClient* client);
+
+        /// <summary>Returns the SDK engine pointer, or nullptr when not running.</summary>
+        [[nodiscard]] SparkyStudios::Audio::Amplitude::Engine* GetEngine() const;
+
+        /// <summary>Allocates a unique, non-reusable ID for scene objects (listener, entity, etc.).</summary>
+        [[nodiscard]] SparkyStudios::Audio::Amplitude::AmObjectID AllocateId();
+
+        /// <summary>Posts work to run on the main thread at the end of the next Tick.</summary>
+        void Post(::Function<void()> work);
+
     private:
+        Array<IAmplitudeServiceClient*> m_clients;
+        CriticalSection m_postLock;
+        Array<Function<void()>> m_posted;
+        std::atomic<uint64> m_nextId{1};
         AmplitudeService();
 
         static void OnEngineUpdate();
