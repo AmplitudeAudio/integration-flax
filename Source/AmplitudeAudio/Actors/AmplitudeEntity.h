@@ -22,6 +22,8 @@
 
 #include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
 
+class IAmplitudeEmitter;
+
 /// <summary>An Amplitude entity. Usually attached to a character or object that emits sound.</summary>
 API_CLASS(Namespace = "AmplitudeAudio", Attributes = "ActorContextMenu(\"New/Amplitude/Entity\"), ActorToolbox(\"Other\")")
 class AMPLITUDEAUDIO_API AmplitudeEntity : public Actor, public AmplitudeAudio::IAmplitudeServiceClient
@@ -47,6 +49,12 @@ public:
 
     /// <summary>Returns the SDK entity handle.</summary>
     const SparkyStudios::Audio::Amplitude::Entity& GetHandle() const;
+
+    /// <summary>Finds an emitter by name on this entity or its descendants.</summary>
+    IAmplitudeEmitter* GetEmitter(const ::StringView& name);
+
+    /// <summary>Returns all emitters on this entity and its descendants.</summary>
+    Array<IAmplitudeEmitter*> GetEmitters();
 
     void OnEngineStarted() override;
     void OnEngineStopping() override;

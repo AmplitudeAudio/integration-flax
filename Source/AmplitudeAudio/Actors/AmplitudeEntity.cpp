@@ -14,11 +14,14 @@
 
 #include "AmplitudeEntity.h"
 
+#include <Engine/Level/SceneObject.h>
+#include <Engine/Scripting/Script.h>
 #include <Engine/Scripting/ScriptingObject.h>
 #include <Engine/Serialization/Serialization.h>
 
 #include <AmplitudeAudio/Core/Helpers.h>
 #include <AmplitudeAudio/Runtime/AmplitudeService.h>
+#include <AmplitudeAudio/Scripts/IAmplitudeEmitter.h>
 
 using AmplitudeAudio::AmplitudeService;
 using SparkyStudios::Audio::Amplitude::Entity;
@@ -121,4 +124,53 @@ void AmplitudeEntity::Deserialize(DeserializeStream& stream, ISerializeModifier*
     Actor::Deserialize(stream, modifier);
     DESERIALIZE_MEMBER(Directivity, Directivity);
     DESERIALIZE_MEMBER(Sharpness, Sharpness);
+}
+
+IAmplitudeEmitter* AmplitudeEntity::GetEmitter(const ::StringView& name)
+{
+    // Search scripts on this actor
+    auto scripts = GetScripts<Script>();
+    for (int i = 0; i < scripts.Count(); i++)
+    {
+        if (auto* e = dynamic_cast<IAmplitudeEmitter*>(static_cast<SceneObject*>(scripts[i])))
+        {
+            if (e->GetName() == name)
+                return e;
+        }
+    }
+    // Search descendants
+    for (Actor* child : GetChildren<Actor>())
+    {
+        auto childScripts = child->GetScripts<Script>();
+        for (int i = 0; i < childScripts.Count(); i++)
+        {
+            if (auto* e = dynamic_cast<IAmplitudeEmitter*>(static_cast<SceneObject*>(childScripts[i])))
+            {
+                if (e->GetName() == name)
+                    return e;
+            }
+        }
+    }
+    return nullptr;
+}
+
+Array<IAmplitudeEmitter*> AmplitudeEntity::GetEmitters()
+{
+    Array<IAmplitudeEmitter*> result;
+    auto scripts = GetScripts<Script>();
+    for (int i = 0; i < scripts.Count(); i++)
+    {
+        if (auto* e = dynamic_cast<IAmplitudeEmitter*>(static_cast<SceneObject*>(scripts[i])))
+            result.Add(e);
+    }
+    for (Actor* child : GetChildren<Actor>())
+    {
+        auto childScripts = child->GetScripts<Script>();
+        for (int i = 0; i < childScripts.Count(); i++)
+        {
+            if (auto* e = dynamic_cast<IAmplitudeEmitter*>(static_cast<SceneObject*>(childScripts[i])))
+                result.Add(e);
+        }
+    }
+    return result;
 }
