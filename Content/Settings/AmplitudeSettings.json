@@ -1,0 +1,21 @@
+{
+	"ID": "cf5f9c7047af8c7e976a2f9bb5572b3d",
+	"TypeName": "FlaxEditor.Content.Settings.AmplitudeSettings",
+	"EngineBuild": 7012,
+	"Data": {
+	"ProjectSourcesPath": "sources",
+	"ProjectBuildPath": "build",
+	"DefaultProfile": {
+		"Platform": 0,
+		"EngineConfigFile": null,
+		"InitSoundBanks": null,
+		"Plugins": null,
+		"PluginSearchPaths": null
+	},
+	"Profiles": null,
+	"PackagingMode": 0,
+	"AmpkToolPath": null,
+	"Compression": 0,
+	"BlockSize": 64
+}
+}

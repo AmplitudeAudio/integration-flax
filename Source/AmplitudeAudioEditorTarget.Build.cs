@@ -23,5 +23,6 @@ public class AmplitudeAudioEditorTarget : GameProjectEditorTarget
 
         Modules.Add("AmplitudeAudio");
         Modules.Add("AmplitudeAudioEditor");
+        Modules.Add("AmplitudeAudioTests");
     }
 }
