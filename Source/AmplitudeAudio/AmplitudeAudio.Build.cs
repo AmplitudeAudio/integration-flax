@@ -24,7 +24,6 @@ public class AmplitudeAudio : GameModule
         base.Setup(options);
         BuildNativeCode = true;
         options.CompileEnv.CppVersion = CppVersion.Cpp17;
-        options.PublicDependencies.Add("AudioSystem");
 
         // Locate the Amplitude Audio SDK via AM_SDK_PATH environment variable
         var sdkRoot = Environment.GetEnvironmentVariable("AM_SDK_PATH");

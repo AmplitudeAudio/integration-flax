@@ -14,56 +14,13 @@
 
 #pragma once
 
-class ISerializeModifier;
-class JsonAsset;
+#include <Engine/Core/Types/String.h>
 
 namespace AmplitudeAudio
 {
-    /// <summary>
-    /// Display name of this plugin, used for logging and registration.
-    /// </summary>
-    static constexpr const char* kPluginName = "Amplitude";
+    /// <summary>Folder holding the Amplitude project, relative to the game project folder.</summary>
+    static constexpr const Char* kAssetBasePath = TEXT("Content/Sounds/Amplitude");
 
-    /// <summary>
-    /// Root directory (relative to the project's Content folder) under which
-    /// all Amplitude asset files are stored.
-    /// </summary>
-    static constexpr const char* kAssetBasePath = "Content/Sounds/Amplitude/";
-
-    /// <summary>
-    /// Sound bank package files produced by the Amplitude build pipeline.
-    /// </summary>
-    static constexpr const char* kExtSoundBank = ".ambank";
-
-    /// <summary>
-    /// Engine configuration files consumed at Amplitude initialization.
-    /// </summary>
-    static constexpr const char* kExtConfig = ".amconfig";
-
-    /// <summary>
-    /// Binary pack files for release builds.
-    /// </summary>
-    static constexpr const char* kExtPack = ".ampk";
-
-    /// <summary>
-    /// File name (without extension) of the default Amplitude engine config.
-    /// </summary>
-    static constexpr const char* kDefaultConfigName = "pc.amconfig";
-
-    /// <summary>
-    /// File name (without extension) of the sound bank that is always loaded
-    /// on engine startup.
-    /// </summary>
-    static constexpr const char* kDefaultInitBankName = "init.ambank";
-
-    /// <summary>
-    /// Returns the active <c>ISerializeModifier</c> for a JsonAsset deserialize
-    /// pass. The Flax C++ JsonAsset pipeline does not currently expose a
-    /// modifier; this helper exists as the single migration point for when a
-    /// future asset-versioning hook is added.
-    /// </summary>
-    inline ISerializeModifier* GetActiveModifier(const JsonAsset* /*asset*/)
-    {
-        return nullptr;
-    }
+    /// <summary>Extension of packages produced by the ampk tool.</summary>
+    static constexpr const Char* kExtPack = TEXT(".ampk");
 } // namespace AmplitudeAudio

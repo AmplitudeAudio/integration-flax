@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Runtime.InteropServices;
 using FlaxEditor;
 using FlaxEngine;
 
@@ -48,8 +47,5 @@ namespace FlaxEditor.Content.Settings
             var asset = FlaxEngine.Content.LoadAsync<JsonAsset>(path);
             GameSettings.SetCustomSettings("Amplitude Audio", asset);
         }
-
-        [LibraryImport("AmplitudeAudio", EntryPoint = "AmplitudeSettingsInternal_Apply")]
-        public static partial void Apply();
     }
 }

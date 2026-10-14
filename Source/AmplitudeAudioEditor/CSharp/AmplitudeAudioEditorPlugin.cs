@@ -74,14 +74,10 @@ namespace AmplitudeAudioEditor
 
         private void OnPlayModeBegin()
         {
-            var settings = AmplitudeSettings.Get();
-            if (settings != null)
-                AmplitudeSettings.Apply();
         }
 
         private void OnPlayModeEnd()
         {
-            // Optionally reset audio state after exiting play mode.
         }
     }
 }

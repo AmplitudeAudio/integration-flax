@@ -19,7 +19,6 @@
 #include <Engine/Core/Config/GameSettings.h>
 #include <Engine/Core/Log.h>
 #include <Engine/Platform/Platform.h>
-#include <Engine/Scripting/Internal/InternalCalls.h>
 #include <Engine/Serialization/Serialization.h>
 
 IMPLEMENT_GAME_SETTINGS_GETTER(AmplitudeSettings, "Amplitude Configuration");
@@ -31,16 +30,6 @@ AmplitudeSettings::AmplitudeSettings()
 void AmplitudeSettings::Apply()
 {
     LOG(Info, "[AmplitudeAudio] Configuration settings applied.");
-}
-
-DEFINE_INTERNAL_CALL(void)
-AmplitudeSettingsInternal_Apply()
-{
-    auto settings = AmplitudeSettings::Get();
-    if (!settings)
-        return;
-
-    settings->Apply();
 }
 
 namespace AmplitudeAudio

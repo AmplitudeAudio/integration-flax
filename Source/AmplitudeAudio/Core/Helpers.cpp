@@ -31,20 +31,19 @@ namespace AmplitudeAudio
         return CartesianCoordinateSystem::ConvertToDefault(result, flax);
     }
 
-    void FlaxTransformToAmplitude(
-        const AudioSystemTransform& transform,
-        AmVector3&                  outLocation,
-        Orientation&                outOrientation)
+    std::string FlaxStringToStdString(const ::String& value)
     {
-        outLocation = FlaxVec3ToAmVec3(transform.Position);
-
-        const AmVector3 forward = FlaxVec3ToAmVec3(transform.Forward);
-        const AmVector3 up      = FlaxVec3ToAmVec3(transform.Up);
-
-        outOrientation = Orientation(forward, up);
+        const ::StringAnsi ansi = value.ToStringAnsi();
+        return std::string(ansi.Get(), ansi.Length());
     }
 
-    String AmOsStringToFlaxString(const AmOsString& path)
+    AmOsString FlaxStringToAmOsString(const ::String& value)
+    {
+        const std::string narrow = FlaxStringToStdString(value);
+        return AmOsString(AM_STRING_TO_OS_STRING(narrow));
+    }
+
+    ::String AmOsStringToFlaxString(const AmOsString& path)
     {
 #ifdef AM_WCHAR_SUPPORTED
         const std::string narrow = am_wstring_narrow(path);

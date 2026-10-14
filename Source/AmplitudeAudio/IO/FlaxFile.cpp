@@ -14,34 +14,13 @@
 
 #include <AmplitudeAudio/IO/FlaxFile.h>
 
-#include <AmplitudeAudio/Core/Common.h>
-
 #include <Engine/Core/Types/String.h>
 #include <Engine/Core/Types/StringView.h>
 
+#include <AmplitudeAudio/Core/Helpers.h>
+
 namespace AmplitudeAudio
 {
-    /// <summary>
-    /// Converts an AmOsString to a Flax String suitable for platform file APIs.
-    // </summary>
-    /// <remarks>
-    /// Flax's Char type may be char16_t (Unix) or wchar_t (Windows), so we
-    /// cannot pass a wchar_t* directly on all platforms.  We always route
-    /// through StringAnsi to avoid the mismatch: on wchar platforms we first
-    /// narrow the wide string using the SDK helper, then use StringAnsi.
-    /// </remarks>
-    static ::String AmOsStringToFlaxString(const AmOsString& path)
-    {
-#ifdef AM_WCHAR_SUPPORTED
-        // AmOsString is std::wstring.
-        const std::string narrow = am_wstring_narrow(path);
-        return ::String(::StringAnsi(narrow.c_str()));
-#else
-        // AmOsString is a narrow std::string.
-        return ::String(::StringAnsi(path.c_str()));
-#endif
-    }
-
     /// <summary>
     /// Maps a high-level file open mode to the underlying platform-specific file mode and access settings.
     /// </summary>

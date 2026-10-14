@@ -18,39 +18,30 @@
 #include "Cpp20Compat.h"
 // clang-format on
 
+#include <string>
+
 #include <Engine/Core/Math/Vector3.h>
+#include <Engine/Core/Types/String.h>
 
-#include <AudioSystem/Core/AudioSystemData.h>
-
+#include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
-#include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace AmplitudeAudio
 {
     using namespace SparkyStudios::Audio::Amplitude;
 
-    /// <summary>
-    /// Converts a Flax Vector3 to an Amplitude AmVector3.
-    /// </summary>
+    /// <summary>Converts a Flax Vector3 to an Amplitude AmVector3.</summary>
     AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
 
-    /// <summary>
-    /// Converts a <see cref="AudioSystemTransform"/> to an Amplitude's location and orientation.
-    /// </summary>
-    /// <param name="transform">The audio system's spatial transform.</param>
-    /// <param name="outLocation">The world-space position expressed as AmVector3.</param>
-    /// <param name="outOrientation">The orientation built from the transform's forward and up unit vectors.</param>
-    void FlaxTransformToAmplitude(const AudioSystemTransform& transform, AmVector3& outLocation, Orientation& outOrientation);
+    /// <summary>Converts a Flax string to a narrow std::string.</summary>
+    std::string FlaxStringToStdString(const ::String& value);
 
-    /// <summary>
-    /// Converts an AmOsString to a Flax String.
-    /// </summary>
+    /// <summary>Converts a Flax string to an Amplitude OS string.</summary>
+    AmOsString FlaxStringToAmOsString(const ::String& value);
+
+    /// <summary>Converts an Amplitude OS string to a Flax string.</summary>
     /// <remarks>
-    /// Flax's Char type can be char16_t (Unix) or wchar_t (Windows), so we
-    /// cannot safely pass a wchar_t* to the Flax String constructor on all
-    /// platforms.  We always route through StringAnsi: on wchar platforms the
-    /// wide AmOsString (std::wstring) is narrowed first via the Amplitude SDK
-    /// helper macro, then wrapped in StringAnsi for the Flax String constructor.
+    /// Flax's Char can be char16_t (Unix) or wchar_t (Windows), so the conversion always goes through StringAnsi.
     /// </remarks>
     ::String AmOsStringToFlaxString(const AmOsString& path);
 } // namespace AmplitudeAudio

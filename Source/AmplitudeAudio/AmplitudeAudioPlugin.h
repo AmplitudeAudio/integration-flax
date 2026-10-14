@@ -14,27 +14,9 @@
 
 #pragma once
 
-#include <atomic>
-
 #include <Engine/Scripting/Plugins/GamePlugin.h>
 
-namespace AmplitudeAudio
-{
-    class AmplitudeMiddleware;
-}
-
-/// <summary>
-/// Main entry point for the Amplitude Audio Flax plugin.
-/// </summary>
-/// <remarks>
-/// Flax calls Initialize() after all modules are loaded and Deinitialize()
-/// before they are unloaded. The plugin owns the AmplitudeMiddleware instance
-/// and is responsible for registering and unregistering it with the AudioSystem.
-///
-/// Configuration is loaded from the native Flax game settings
-/// (Amplitude Configuration, edited via Settings > Game Settings). It must
-/// contain per-platform profiles with InitSoundBank and EngineConfigFile entries.
-/// </remarks>
+/// <summary>Entry point of the Amplitude Audio plugin.</summary>
 API_CLASS()
 class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
 {
@@ -44,11 +26,6 @@ class AMPLITUDEAUDIO_API AmplitudeAudioPlugin : public GamePlugin
     void Deinitialize() override;
 
 private:
-    /// <summary>
-    /// Guards against double initialization when multiple projects reference this plugin.
-    /// </summary>
+    /// <summary>Guards against double initialization when multiple projects reference this plugin.</summary>
     static bool _initialized;
-
-    /// <summary>Owned middleware instance. Created in Initialize(), destroyed in Deinitialize().</summary>
-    AmplitudeAudio::AmplitudeMiddleware* _middleware = nullptr;
 };

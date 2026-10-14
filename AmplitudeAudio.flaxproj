@@ -8,9 +8,6 @@
 	"References": [
 		{
 			"Name": "$(EnginePath)/Flax.flaxproj"
-		},
-		{
-			"Name": "$(ProjectPath)/../AudioSystem/AudioSystem.flaxproj"
 		}
 	],
 	"DefaultScene": null,
