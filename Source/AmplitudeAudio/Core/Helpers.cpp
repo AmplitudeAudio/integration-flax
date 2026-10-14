@@ -17,6 +17,7 @@
 #include <Engine/Engine/Units.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace AmplitudeAudio
 {
@@ -51,5 +52,10 @@ namespace AmplitudeAudio
 #else
         return ::String(::StringAnsi(path.c_str()));
 #endif
+    }
+
+    Orientation FlaxOrientationToAm(const Vector3& forward, const Vector3& up)
+    {
+        return Orientation(FlaxVec3ToAmVec3(forward), FlaxVec3ToAmVec3(up));
     }
 } // namespace AmplitudeAudio

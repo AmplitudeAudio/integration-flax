@@ -25,19 +25,23 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Math/LinearAlgebra.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace AmplitudeAudio
 {
     using namespace SparkyStudios::Audio::Amplitude;
 
     /// <summary>Converts a Flax Vector3 to an Amplitude AmVector3.</summary>
-    AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
+    AMPLITUDEAUDIO_API AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
 
     /// <summary>Converts seconds to the SDK's time unit (milliseconds).</summary>
     inline AmTime SecondsToAmTime(float seconds)
     {
         return static_cast<AmTime>(seconds) * 1000.0;
     }
+
+    /// <summary>Builds an Amplitude orientation from Flax forward and up vectors.</summary>
+    AMPLITUDEAUDIO_API Orientation FlaxOrientationToAm(const Vector3& forward, const Vector3& up);
 
     /// <summary>Converts a Flax string to a narrow std::string.</summary>
     std::string FlaxStringToStdString(const ::String& value);
