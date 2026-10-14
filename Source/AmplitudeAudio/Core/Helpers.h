@@ -34,6 +34,9 @@ namespace AmplitudeAudio
     /// <summary>Converts a Flax Vector3 to an Amplitude AmVector3.</summary>
     AMPLITUDEAUDIO_API AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
 
+    /// <summary>Converts an Amplitude AmVector3 to a Flax Vector3 (inverse of FlaxVec3ToAmVec3).</summary>
+    AMPLITUDEAUDIO_API Vector3 AmVec3ToFlaxVec3(const AmVector3& vec);
+
     /// <summary>Converts seconds to the SDK's time unit (milliseconds).</summary>
     inline AmTime SecondsToAmTime(float seconds)
     {

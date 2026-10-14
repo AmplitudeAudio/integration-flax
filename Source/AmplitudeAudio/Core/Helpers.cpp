@@ -58,4 +58,19 @@ namespace AmplitudeAudio
     {
         return Orientation(FlaxVec3ToAmVec3(forward), FlaxVec3ToAmVec3(up));
     }
+
+    Vector3 AmVec3ToFlaxVec3(const AmVector3& vec)
+    {
+        static const CartesianCoordinateSystem flax(
+            CartesianCoordinateSystem::Axis::PositiveX,
+            CartesianCoordinateSystem::Axis::PositiveZ,
+            CartesianCoordinateSystem::Axis::PositiveY);
+
+        // Convert from Amplitude default (Z-up) to Flax (Y-up)
+        AmVector3 result = CartesianCoordinateSystem::Convert(vec, CartesianCoordinateSystem::Default(), flax);
+        const float scale = 1.0f / UNITS_TO_METERS_SCALE;
+        return Vector3(static_cast<float>(result[0]) * scale,
+            static_cast<float>(result[1]) * scale,
+            static_cast<float>(result[2]) * scale);
+    }
 } // namespace AmplitudeAudio
