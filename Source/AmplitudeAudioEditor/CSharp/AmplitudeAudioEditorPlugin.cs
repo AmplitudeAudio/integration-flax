@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using AmplitudeAudioEditor.Cooking;
+using AmplitudeAudioEditor.Project;
 using FlaxEditor;
 using FlaxEngine;
 using FlaxEditor.Content.Settings;
@@ -62,6 +63,7 @@ namespace AmplitudeAudioEditor
             AmplitudeCooker.Unregister();
             _assetProxies?.Unregister();
             _assetProxies = null;
+            AmplitudeProjectWatcher.Instance.Dispose();
 
             _initialized = false;
             Debug.Log("[AmplitudeAudio] C# editor plugin deinitialized.");

@@ -25,6 +25,13 @@
 
 class AmplitudeEntity;
 
+/// <summary>When the event auto-triggers.</summary>
+API_ENUM(Namespace = "AmplitudeAudio")
+enum class AmplitudeAutoTriggerMode
+{
+    None = 0, OnStart = 1, OnEnable = 2
+};
+
 /// <summary>Triggers an Amplitude event on an entity. Attach to an actor with an AmplitudeEntity ancestor.</summary>
 API_CLASS(Namespace = "AmplitudeAudio", Attributes = "FlaxEngine.Category(\"Amplitude\")")
 class AMPLITUDEAUDIO_API AmplitudeEvent : public Script
@@ -40,19 +47,15 @@ public:
     API_FIELD(Attributes = "EditorOrder(1)")
     ScriptingObjectReference<AmplitudeEntity> EntityOverride;
 
-    /// <summary>Trigger the event when the script starts.</summary>
+    /// <summary>When to auto-trigger the event.</summary>
     API_FIELD(Attributes = "EditorOrder(2)")
-    bool TriggerOnStart = false;
-
-    /// <summary>Trigger the event when the script is enabled.</summary>
-    API_FIELD(Attributes = "EditorOrder(3)")
-    bool TriggerOnEnable = false;
+    AmplitudeAutoTriggerMode AutoTrigger = AmplitudeAutoTriggerMode::None;
 
     /// <summary>Cancel all triggered events when the script is disabled.</summary>
-    API_FIELD(Attributes = "EditorOrder(4)")
+    API_FIELD(Attributes = "EditorOrder(3)")
     bool CancelOnDisable = true;
 
-    /// <summary>Triggers the event and returns the handle.</summary>
+    /// <summary>Triggers the event and returns the handle. The returned object is replaced by the next call; do not keep it across plays.</summary>
     API_FUNCTION()
     AmplitudeEventHandle* Trigger();
 

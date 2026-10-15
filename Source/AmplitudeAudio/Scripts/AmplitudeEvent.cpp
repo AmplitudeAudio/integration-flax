@@ -34,6 +34,15 @@ AmplitudeEvent::AmplitudeEvent(const SpawnParams& params)
 
 AmplitudeEventHandle* AmplitudeEvent::Trigger()
 {
+    for (int32 i = _handles.Count() - 1; i >= 0; --i)
+    {
+        if (!_handles[i] || !_handles[i].Get()->IsValid())
+        {
+            if (_handles[i])
+                _handles[i].Get()->DeleteObject();
+            _handles.RemoveAt(i);
+        }
+    }
     AmplitudeEntity* entity = EntityOverride ? EntityOverride.Get() : AmplitudeEntity::FindNearest(GetActor());
     if (!entity)
     {
@@ -51,19 +60,21 @@ void AmplitudeEvent::CancelAll()
     {
         if (handle && handle.Get()->IsValid())
             handle.Get()->Cancel();
+        if (handle)
+            handle.Get()->DeleteObject();
     }
     _handles.Clear();
 }
 
 void AmplitudeEvent::OnStart()
 {
-    if (TriggerOnStart)
+    if (AutoTrigger == AmplitudeAutoTriggerMode::OnStart)
         Trigger();
 }
 
 void AmplitudeEvent::OnEnable()
 {
-    if (TriggerOnEnable)
+    if (AutoTrigger == AmplitudeAutoTriggerMode::OnEnable)
         Trigger();
 }
 
@@ -79,8 +90,7 @@ void AmplitudeEvent::Serialize(SerializeStream& stream, const void* otherObj)
     SERIALIZE_GET_OTHER_OBJ(AmplitudeEvent);
     SERIALIZE_MEMBER(Event, Event);
     SERIALIZE_MEMBER(EntityOverride, EntityOverride);
-    SERIALIZE_MEMBER(TriggerOnStart, TriggerOnStart);
-    SERIALIZE_MEMBER(TriggerOnEnable, TriggerOnEnable);
+    SERIALIZE_MEMBER(AutoTrigger, AutoTrigger);
     SERIALIZE_MEMBER(CancelOnDisable, CancelOnDisable);
 }
 
@@ -89,7 +99,6 @@ void AmplitudeEvent::Deserialize(DeserializeStream& stream, ISerializeModifier* 
     Script::Deserialize(stream, modifier);
     DESERIALIZE_MEMBER(Event, Event);
     DESERIALIZE_MEMBER(EntityOverride, EntityOverride);
-    DESERIALIZE_MEMBER(TriggerOnStart, TriggerOnStart);
-    DESERIALIZE_MEMBER(TriggerOnEnable, TriggerOnEnable);
+    DESERIALIZE_MEMBER(AutoTrigger, AutoTrigger);
     DESERIALIZE_MEMBER(CancelOnDisable, CancelOnDisable);
 }

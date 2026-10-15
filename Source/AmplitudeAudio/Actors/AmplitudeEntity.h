@@ -60,6 +60,8 @@ public:
     void OnEngineStopping() override;
 
     // Actor
+    void OnBeginPlay() override;
+    void OnEndPlay() override;
     void OnEnable() override;
     void OnDisable() override;
     void OnTransformChanged() override;
@@ -67,6 +69,8 @@ public:
     void Deserialize(DeserializeStream& stream, ISerializeModifier* modifier) override;
 
 private:
+    void Register();
+    void Unregister();
     void PushState() const;
 
     SparkyStudios::Audio::Amplitude::Entity _entity;

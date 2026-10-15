@@ -72,6 +72,26 @@ The editor creates the **Amplitude Settings** asset (`Content/Settings/Amplitude
 
 Add the `AmplitudeSoundBank` script to an actor and set its `Bank` to the bank file name. The bank is loaded while the script is enabled and released when it is disabled. Enable `LoadAsync` to load its sound files in the background. `IsLoaded` reports whether the bank and its sound files are loaded.
 
+### Scene objects
+
+- Add an `AmplitudeListener` to the camera (or another actor) to provide the listener position. The last enabled listener with `IsDefault` enabled is the default listener.
+- Add an `AmplitudeEntity` to each actor that emits or receives sounds. Attach emitters and event scripts to that actor or its descendants.
+- Add an `AmplitudeEmitter` script and choose its `SoundObject`. `PlayOnStart` starts playback automatically; `StopOnDisable` controls whether disabling the script stops it.
+- Add an `AmplitudeEvent` script and choose its event. It can trigger on start or enable, resolve the nearest ancestor `AmplitudeEntity`, and cancel its events on disable.
+- `AmplitudeSpatialization.Auto` uses the entity when available and otherwise the location; `Entity` and `Location` force those modes, while `None` disables spatialization.
+
+The static API can also play at a position, trigger events, and control RTPCs and switches:
+
+```csharp
+using AmplitudeAudio;
+using FlaxEngine;
+void PlayExample(AmplitudeEntity entity) {
+    Amplitude.PlayAt(new AmplitudeSoundObjectRef { ID = 201 }, Vector3.Zero);
+    Amplitude.TriggerEvent(new AmplitudeEventRef { ID = 5 }, entity);
+    Amplitude.SetRtpcValue(new AmplitudeRtpcRef { ID = 1 }, 25.0);
+}
+```
+
 ### Static API
 
 Call the `AmplitudeAudio.Amplitude` static API from C++ or C#:
@@ -80,6 +100,21 @@ Call the `AmplitudeAudio.Amplitude` static API from C++ or C#:
 - `IsRunning()` reports whether the engine is started.
 - `LoadSoundBank(bank, wait)` and `UnloadSoundBank(bank)` load and release a sound bank by reference. `LoadSoundBank` blocks until the sound files are loaded when `wait` is true.
 - `IsSoundBankLoaded(bank)` reports whether the bank and its sound files are loaded.
+
+### Animation events
+
+Add these event assets to an animation clip to drive Amplitude during playback:
+
+| Event | Fields | Behaviour |
+|---|---|---|
+| `AmplitudePlaySoundAnimEvent` | `SoundObject`, `EntityName`, `BoneName` | Plays once; uses an entity when no bone is set, otherwise plays at the selected world position. |
+| `AmplitudePlaySoundContinuousAnimEvent` | `SoundObject`, `EntityName`, `BoneName`, `FadeOutSeconds` | Plays for the event range, follows a selected bone, and fades out on end. |
+| `AmplitudeTriggerEventAnimEvent` | `Event`, `EntityName` | Triggers once on the resolved entity. |
+| `AmplitudeTriggerEventContinuousAnimEvent` | `Event`, `EntityName` | Triggers on begin and cancels on end. |
+| `AmplitudeSetRtpcAnimEvent` | `Rtpc`, `Value` | Sets the global RTPC value. |
+| `AmplitudeSetSwitchAnimEvent` | `Switch`, `State` | Sets the global switch state. |
+
+For play and trigger events, the nearest `AmplitudeEntity` ancestor of the `AnimatedModel` is the default target; `EntityName` selects a matching ancestor when several are nested. The supported hierarchy has the entity wrapping the model (or as a further ancestor), not as a child of it. Play events without a matching entity fall back to untracked location playback at the model or bone; trigger events without one log one configuration error per event instance. Continuous bone playback starts untracked at the bone and updates its position while the range is active.
 
 The engine starts with the plugin. In cooked games it runs for the whole run. In the editor it runs only during Play.
 

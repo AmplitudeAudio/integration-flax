@@ -31,6 +31,7 @@ public:
     virtual ::String GetName() const = 0;
     virtual AmplitudeSoundObjectRef GetSoundObject() const = 0;
     virtual bool GetPlayOnStart() const = 0;
+    virtual bool GetPlayOnEnable() const = 0;
     virtual bool GetStopOnDisable() const = 0;
     virtual void Play() = 0;
     virtual void Stop() = 0;

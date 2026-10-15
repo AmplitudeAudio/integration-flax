@@ -59,17 +59,15 @@ void AmplitudeListener::OnEngineStopping()
     _id = 0;
 }
 
-void AmplitudeListener::OnEnable()
+void AmplitudeListener::Register()
 {
-    Actor::OnEnable();
-    if (!_registered)
-    {
-        AmplitudeService::Get().AddClient(this);
-        _registered = true;
-    }
+    if (_registered)
+        return;
+    _registered = true;
+    AmplitudeService::Get().AddClient(this);
 }
 
-void AmplitudeListener::OnDisable()
+void AmplitudeListener::Unregister()
 {
     if (_registered)
     {
@@ -77,9 +75,30 @@ void AmplitudeListener::OnDisable()
         _registered = false;
     }
     if (_listener.Valid())
-    {
         OnEngineStopping();
-    }
+}
+
+void AmplitudeListener::OnBeginPlay()
+{
+    Actor::OnBeginPlay();
+    Register();
+}
+
+void AmplitudeListener::OnEndPlay()
+{
+    Unregister();
+    Actor::OnEndPlay();
+}
+
+void AmplitudeListener::OnEnable()
+{
+    Actor::OnEnable();
+    Register();
+}
+
+void AmplitudeListener::OnDisable()
+{
+    Unregister();
     Actor::OnDisable();
 }
 

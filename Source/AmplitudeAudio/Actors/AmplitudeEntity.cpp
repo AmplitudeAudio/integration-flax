@@ -64,25 +64,24 @@ void AmplitudeEntity::OnEngineStarted()
 
 void AmplitudeEntity::OnEngineStopping()
 {
-    auto* engine = AmplitudeService::Get().GetEngine();
-    if (_entity.Valid() && engine)
-    {
+    // Cleared even without an engine: after a shutdown the handle points at freed state.
+    if (!_entity.Valid())
+        return;
+
+    if (auto* engine = AmplitudeService::Get().GetEngine())
         engine->RemoveEntity(&_entity);
-        _entity.Clear();
-    }
+    _entity.Clear();
 }
 
-void AmplitudeEntity::OnEnable()
+void AmplitudeEntity::Register()
 {
-    Actor::OnEnable();
-    if (!_registered)
-    {
-        AmplitudeService::Get().AddClient(this);
-        _registered = true;
-    }
+    if (_registered)
+        return;
+    _registered = true;
+    AmplitudeService::Get().AddClient(this);
 }
 
-void AmplitudeEntity::OnDisable()
+void AmplitudeEntity::Unregister()
 {
     if (_registered)
     {
@@ -90,9 +89,30 @@ void AmplitudeEntity::OnDisable()
         _registered = false;
     }
     if (_entity.Valid())
-    {
         OnEngineStopping();
-    }
+}
+
+void AmplitudeEntity::OnBeginPlay()
+{
+    Actor::OnBeginPlay();
+    Register();
+}
+
+void AmplitudeEntity::OnEndPlay()
+{
+    Unregister();
+    Actor::OnEndPlay();
+}
+
+void AmplitudeEntity::OnEnable()
+{
+    Actor::OnEnable();
+    Register();
+}
+
+void AmplitudeEntity::OnDisable()
+{
+    Unregister();
     Actor::OnDisable();
 }
 

@@ -16,7 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
+using Newtonsoft.Json.Linq;
 
 namespace AmplitudeAudioEditor.Project
 {
@@ -117,26 +117,28 @@ namespace AmplitudeAudioEditor.Project
                     {
                         var relative = Path.GetRelativePath(sourcesPath, file).Replace('\\', '/');
                         var text = File.ReadAllText(file);
-                        using var doc = JsonDocument.Parse(text);
-                        var root = doc.RootElement;
+                        var obj = JObject.Parse(text);
+                        if (obj == null)
+                            continue;
 
-                        if (!root.TryGetProperty("id", out var idElem) || !idElem.TryGetUInt64(out var id))
+                        if (obj["id"]?.Type != JTokenType.Integer)
                             continue;
-                        if (!root.TryGetProperty("name", out var nameElem) || nameElem.GetString() is not { } name)
+                        var id = obj["id"].Value<ulong>();
+                        if (obj["name"]?.Type != JTokenType.String)
                             continue;
+                        var name = obj["name"].Value<string>();
 
                         list.Add(new AmplitudeObjectInfo(kind, id, name, relative));
 
                         // Parse switch states
-                        if (kind == AmplitudeObjectKind.Switch && root.TryGetProperty("states", out var statesElem))
+                        if (kind == AmplitudeObjectKind.Switch && obj["states"] is JArray statesList)
                         {
                             var states = new List<AmplitudeSwitchStateInfo>();
-                            foreach (var state in statesElem.EnumerateArray())
+                            foreach (var state in statesList.OfType<JObject>())
                             {
-                                if (state.TryGetProperty("id", out var sid) && sid.TryGetUInt64(out var stateId) &&
-                                    state.TryGetProperty("name", out var sname) && sname.GetString() is { } stateName)
+                                if (state["id"]?.Type == JTokenType.Integer && state["name"]?.Type == JTokenType.String)
                                 {
-                                    states.Add(new AmplitudeSwitchStateInfo(stateId, stateName));
+                                    states.Add(new AmplitudeSwitchStateInfo(state["id"].Value<ulong>(), state["name"].Value<string>()));
                                 }
                             }
                             index._switchStates[id] = states;

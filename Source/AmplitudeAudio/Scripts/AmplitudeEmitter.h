@@ -32,6 +32,13 @@ enum class AmplitudeSpatialization
     Auto = 0, Entity = 1, Location = 2, None = 3,
 };
 
+/// <summary>When the emitter autoplays its sound object.</summary>
+API_ENUM(Namespace = "AmplitudeAudio")
+enum class AmplitudeAutoPlayMode
+{
+    None = 0, OnStart = 1, OnEnable = 2
+};
+
 /// <summary>Plays a sound object from an actor. Attach to an actor with an AmplitudeEntity ancestor.</summary>
 API_CLASS(Namespace = "AmplitudeAudio", Attributes = "FlaxEngine.Category(\"Amplitude\")")
 class AMPLITUDEAUDIO_API AmplitudeEmitter : public Script, public IAmplitudeEmitter
@@ -47,9 +54,9 @@ public:
     API_FIELD(Attributes = "EditorOrder(1)")
     AmplitudeSoundObjectRef SoundObject;
 
-    /// <summary>Whether to play on start.</summary>
+    /// <summary>When to autoplay the sound.</summary>
     API_FIELD(Attributes = "EditorOrder(2)")
-    bool PlayOnStart = false;
+    AmplitudeAutoPlayMode AutoPlay = AmplitudeAutoPlayMode::None;
 
     /// <summary>Whether to stop on disable.</summary>
     API_FIELD(Attributes = "EditorOrder(3)")
@@ -79,22 +86,25 @@ public:
     API_PROPERTY()
     bool GetIsPlaying() const override;
 
-    /// <summary>The current channel, or null.</summary>
+    /// <summary>The current channel, or null. The returned object is replaced by the next call; do not keep it across plays.</summary>
     API_PROPERTY()
     AmplitudeChannel* GetChannel() const override;
 
     // IAmplitudeEmitter
     ::String GetName() const override { return Name; }
     AmplitudeSoundObjectRef GetSoundObject() const override { return SoundObject; }
-    bool GetPlayOnStart() const override { return PlayOnStart; }
+    bool GetPlayOnStart() const override { return AutoPlay == AmplitudeAutoPlayMode::OnStart; }
+    bool GetPlayOnEnable() const override { return AutoPlay == AmplitudeAutoPlayMode::OnEnable; }
     bool GetStopOnDisable() const override { return StopOnDisable; }
 
     // Script
     void OnStart() override;
+    void OnEnable() override;
     void OnDisable() override;
     void Serialize(SerializeStream& stream, const void* otherObj) override;
     void Deserialize(DeserializeStream& stream, ISerializeModifier* modifier) override;
 
 private:
+    void                                       ReleaseChannel();
     ScriptingObjectReference<AmplitudeChannel> _channel;
 };

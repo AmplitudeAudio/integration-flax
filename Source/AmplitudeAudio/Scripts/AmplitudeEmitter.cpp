@@ -32,42 +32,49 @@ AmplitudeEmitter::AmplitudeEmitter(const SpawnParams& params)
 
 void AmplitudeEmitter::Play()
 {
+    ReleaseChannel();
     if (!SoundObject.IsValid())
         return;
 
-    // Stop any current channel first
-    if (_channel && _channel.Get()->IsValid())
-        _channel.Get()->Stop(0.0f);
-
-    AmplitudeEntity* entity = AmplitudeEntity::FindNearest(GetActor());
-    bool hasEntity = entity && entity->IsValid();
+    AmplitudeEntity* entity    = AmplitudeEntity::FindNearest(GetActor());
+    bool             hasEntity = entity && entity->IsValid();
 
     // Resolve spatialization target
     switch (Spatialization)
     {
-    case AmplitudeSpatialization::Auto:
-        if (hasEntity)
-        {
-            _channel = Amplitude::Play(SoundObject, entity);
-        }
-        else
-        {
+        case AmplitudeSpatialization::Auto:
+            if (hasEntity)
+            {
+                _channel = Amplitude::Play(SoundObject, entity);
+            }
+            else
+            {
+                _channel = Amplitude::PlayAt(SoundObject, GetActor()->GetPosition());
+            }
+            break;
+        case AmplitudeSpatialization::Entity:
+            if (hasEntity)
+                _channel = Amplitude::Play(SoundObject, entity);
+            else
+                LOG(Error, "AmplitudeEmitter '{0}' on '{1}' has no AmplitudeEntity for Entity spatialization.", Name, GetActor()->GetName());
+            break;
+        case AmplitudeSpatialization::Location:
             _channel = Amplitude::PlayAt(SoundObject, GetActor()->GetPosition());
-        }
-        break;
-    case AmplitudeSpatialization::Entity:
-        if (hasEntity)
-            _channel = Amplitude::Play(SoundObject, entity);
-        else
-            LOG(Error, "AmplitudeEmitter '{0}' on '{1}' has no AmplitudeEntity for Entity spatialization.", Name, GetActor()->GetName());
-        break;
-    case AmplitudeSpatialization::Location:
-        _channel = Amplitude::PlayAt(SoundObject, GetActor()->GetPosition());
-        break;
-    case AmplitudeSpatialization::None:
-        _channel = Amplitude::Play(SoundObject);
-        break;
+            break;
+        case AmplitudeSpatialization::None:
+            _channel = Amplitude::Play(SoundObject);
+            break;
     }
+}
+
+void AmplitudeEmitter::ReleaseChannel()
+{
+    if (!_channel)
+        return;
+    if (_channel.Get()->IsValid())
+        _channel.Get()->Stop(0.0f);
+    _channel.Get()->DeleteObject();
+    _channel = nullptr;
 }
 
 void AmplitudeEmitter::Stop()
@@ -100,14 +107,20 @@ AmplitudeChannel* AmplitudeEmitter::GetChannel() const
 
 void AmplitudeEmitter::OnStart()
 {
-    if (PlayOnStart)
+    if (GetPlayOnStart())
+        Play();
+}
+
+void AmplitudeEmitter::OnEnable()
+{
+    if (GetPlayOnEnable())
         Play();
 }
 
 void AmplitudeEmitter::OnDisable()
 {
     if (StopOnDisable)
-        Stop();
+        ReleaseChannel();
 }
 
 void AmplitudeEmitter::Serialize(SerializeStream& stream, const void* otherObj)
@@ -116,7 +129,7 @@ void AmplitudeEmitter::Serialize(SerializeStream& stream, const void* otherObj)
     SERIALIZE_GET_OTHER_OBJ(AmplitudeEmitter);
     SERIALIZE_MEMBER(Name, Name);
     SERIALIZE_MEMBER(SoundObject, SoundObject);
-    SERIALIZE_MEMBER(PlayOnStart, PlayOnStart);
+    SERIALIZE_MEMBER(AutoPlay, AutoPlay);
     SERIALIZE_MEMBER(StopOnDisable, StopOnDisable);
     SERIALIZE_MEMBER(Spatialization, Spatialization);
 }
@@ -126,7 +139,7 @@ void AmplitudeEmitter::Deserialize(DeserializeStream& stream, ISerializeModifier
     Script::Deserialize(stream, modifier);
     DESERIALIZE_MEMBER(Name, Name);
     DESERIALIZE_MEMBER(SoundObject, SoundObject);
-    DESERIALIZE_MEMBER(PlayOnStart, PlayOnStart);
+    DESERIALIZE_MEMBER(AutoPlay, AutoPlay);
     DESERIALIZE_MEMBER(StopOnDisable, StopOnDisable);
     DESERIALIZE_MEMBER(Spatialization, Spatialization);
 }

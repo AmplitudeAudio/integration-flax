@@ -75,3 +75,42 @@ TEST_CASE("FindNearest returns the actor itself, then ancestors", "[entity]")
 
     parent->DeleteObjectNow();
 }
+
+// Flax runs a child's OnEnable (and its scripts' OnStart) before its parent's OnEnable, so the entity
+// has to be usable from OnBeginPlay, which runs parent-first.
+TEST_CASE("entity is valid from BeginPlay, before it is enabled", "[entity]")
+{
+    String root, buildPath;
+    REQUIRE_TEST_PROJECT(root, buildPath);
+    ServiceGuard service;
+    REQUIRE(AmplitudeService::Get().Startup(MakeProfile(TEXT("pc.config.amconfig")), root, buildPath));
+    auto* entity = ScriptingObject::NewObject<AmplitudeEntity>();
+
+    entity->OnBeginPlay();
+    CHECK(entity->IsValid());
+
+    entity->OnEnable();
+    CHECK(entity->IsValid());
+
+    entity->OnEndPlay();
+    CHECK_FALSE(entity->IsValid());
+    entity->DeleteObjectNow();
+}
+
+TEST_CASE("an entity never enabled is released at EndPlay", "[entity]")
+{
+    String root, buildPath;
+    REQUIRE_TEST_PROJECT(root, buildPath);
+    ServiceGuard service;
+    REQUIRE(AmplitudeService::Get().Startup(MakeProfile(TEXT("pc.config.amconfig")), root, buildPath));
+    auto* entity = ScriptingObject::NewObject<AmplitudeEntity>();
+
+    entity->OnBeginPlay();
+    entity->OnEndPlay();
+    CHECK_FALSE(entity->IsValid());
+
+    // A later engine restart must not reach a deleted client.
+    entity->DeleteObjectNow();
+    AmplitudeService::Get().Shutdown();
+    REQUIRE(AmplitudeService::Get().Startup(MakeProfile(TEXT("pc.config.amconfig")), root, buildPath));
+}

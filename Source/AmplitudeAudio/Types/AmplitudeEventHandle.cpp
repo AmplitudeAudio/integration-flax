@@ -19,13 +19,22 @@
 using AmplitudeAudio::AmplitudeService;
 using SparkyStudios::Audio::Amplitude::EventCanceler;
 
+namespace
+{
+    std::atomic<int> s_live{ 0 };
+}
+
 AmplitudeEventHandle* AmplitudeEventHandle::Create(const EventCanceler& canceler)
 {
-    auto* wrapper = ScriptingObject::NewObject<AmplitudeEventHandle>();
+    auto* wrapper = ::New<AmplitudeEventHandle>(SpawnParams(Guid::New(), AmplitudeEventHandle::TypeInitializer));
+    ++s_live;
     wrapper->_canceler = canceler;
     wrapper->_state = std::make_shared<CallbackState>(CallbackState{ wrapper });
     if (!canceler.Valid())
         return wrapper;
+
+    // The canceler owns an SDK event instance that must be released before the engine goes away.
+    AmplitudeService::Get().AddClient(wrapper);
 
     ForwardFinish(canceler, [state = wrapper->_state](bool aborted)
     {
@@ -40,8 +49,24 @@ AmplitudeEventHandle* AmplitudeEventHandle::Create(const EventCanceler& canceler
 
 AmplitudeEventHandle::~AmplitudeEventHandle()
 {
+    --s_live;
+    AmplitudeService::Get().RemoveClient(this);
     if (_state)
         _state->Owner = nullptr;
+}
+
+void AmplitudeEventHandle::OnEngineStarted()
+{
+}
+
+void AmplitudeEventHandle::OnEngineStopping()
+{
+    _canceler = EventCanceler();
+}
+
+int AmplitudeEventHandle::GetLiveCount()
+{
+    return s_live.load();
 }
 
 bool AmplitudeEventHandle::IsValid() const

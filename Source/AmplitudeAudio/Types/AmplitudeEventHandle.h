@@ -15,22 +15,35 @@
 #pragma once
 
 #include <memory>
+#include <atomic>
 
 #include <AmplitudeAudio/Core/Cpp20Compat.h>
 
 #include <Engine/Scripting/ScriptingObject.h>
 
+#include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 
 /// <summary>Wraps an Amplitude EventCanceler handle. Created by the plugin, not spawnable from C#.</summary>
 API_CLASS(NoSpawn, Namespace = "AmplitudeAudio")
-class AMPLITUDEAUDIO_API AmplitudeEventHandle : public ScriptingObject
+class AMPLITUDEAUDIO_API AmplitudeEventHandle : public ScriptingObject, public AmplitudeAudio::IAmplitudeServiceClient
 {
     DECLARE_SCRIPTING_TYPE_NO_SPAWN(AmplitudeEventHandle);
 
 public:
+    explicit AmplitudeEventHandle(const SpawnParams& params)
+        : ScriptingObject(params)
+    {
+    }
+
     static AmplitudeEventHandle* Create(const SparkyStudios::Audio::Amplitude::EventCanceler& canceler);
+    API_PROPERTY() static int GetLiveCount();
     ~AmplitudeEventHandle();
+
+    // IAmplitudeServiceClient
+    void OnEngineStarted() override;
+    void OnEngineStopping() override;
 
     API_PROPERTY() bool IsValid() const;
     API_FUNCTION() void Cancel();

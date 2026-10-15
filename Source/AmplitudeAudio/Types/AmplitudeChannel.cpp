@@ -19,6 +19,7 @@
 
 namespace
 {
+    std::atomic<int> s_live{ 0 };
     using SparkyStudios::Audio::Amplitude::Channel;
 
     // Converts SDK playback state to the scripting enum
@@ -53,11 +54,15 @@ namespace
 
 AmplitudeChannel* AmplitudeChannel::Create(const Channel& channel)
 {
-    auto* wrapper = ScriptingObject::NewObject<AmplitudeChannel>();
+    auto* wrapper = ::New<AmplitudeChannel>(SpawnParams(Guid::New(), AmplitudeChannel::TypeInitializer));
+    ++s_live;
     wrapper->_channel = channel;
     wrapper->_state = std::make_shared<CallbackState>(CallbackState{ wrapper });
     if (!channel.Valid())
         return wrapper;
+
+    // Channel::Valid() is only a null check, so the wrapper must drop the handle itself when the engine stops.
+    AmplitudeAudio::AmplitudeService::Get().AddClient(wrapper);
 
     HookChannelEvent(SparkyStudios::Audio::Amplitude::eChannelEvent_Begin, &AmplitudeChannel::OnBegin, wrapper->_state, channel);
     HookChannelEvent(SparkyStudios::Audio::Amplitude::eChannelEvent_End, &AmplitudeChannel::OnEnd, wrapper->_state, channel);
@@ -70,8 +75,24 @@ AmplitudeChannel* AmplitudeChannel::Create(const Channel& channel)
 
 AmplitudeChannel::~AmplitudeChannel()
 {
+    --s_live;
+    AmplitudeAudio::AmplitudeService::Get().RemoveClient(this);
     if (_state)
         _state->Owner = nullptr;
+}
+
+void AmplitudeChannel::OnEngineStarted()
+{
+}
+
+void AmplitudeChannel::OnEngineStopping()
+{
+    _channel = Channel();
+}
+
+int AmplitudeChannel::GetLiveCount()
+{
+    return s_live.load();
 }
 
 bool AmplitudeChannel::IsValid() const
