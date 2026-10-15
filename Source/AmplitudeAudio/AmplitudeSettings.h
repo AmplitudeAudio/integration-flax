@@ -17,7 +17,12 @@
 #include <Engine/Core/Collections/Array.h>
 #include <Engine/Core/Config/Settings.h>
 #include <Engine/Core/ISerializable.h>
+#include <Engine/Core/Types/LayersMask.h>
 #include <Engine/Core/Types/String.h>
+#include <Engine/Content/AssetReference.h>
+#include <Engine/Content/JsonAsset.h>
+#include <Engine/Level/Tags.h>
+#include <Engine/Physics/PhysicalMaterial.h>
 #include <Engine/Platform/Defines.h>
 #include <Engine/Scripting/ScriptingType.h>
 
@@ -69,6 +74,112 @@ struct AMPLITUDEAUDIO_API AmplitudePluginSearchPath : public ISerializable
     /// <summary>Folder relative to Content/Sounds/Amplitude.</summary>
     API_FIELD()
     String Path;
+};
+
+/// <summary>How an audio source is checked for physics obstruction.</summary>
+API_ENUM(Namespace = "AmplitudeAudio")
+enum class AmplitudeObstructionMode
+{
+    /// <summary>No obstruction or occlusion ray casting.</summary>
+    None = 0,
+
+    /// <summary>Cast a single ray between the source and listener.</summary>
+    SingleRay = 1,
+
+    /// <summary>Cast a direct ray plus indirect rays on a disk to distinguish obstruction from occlusion.</summary>
+    MultipleRays = 2,
+};
+
+/// <summary>Obstruction amount assigned to an exact physical material.</summary>
+API_STRUCT(Namespace = "AmplitudeAudio")
+struct AMPLITUDEAUDIO_API AmplitudeObstructionMaterialAmount : public ISerializable
+{
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeObstructionMaterialAmount);
+    API_AUTO_SERIALIZATION();
+
+    /// <summary>The physical material.</summary>
+    API_FIELD(Attributes = "EditorOrder(0), AssetReference(typeof(PhysicalMaterial))")
+    AssetReference<JsonAsset> Material;
+
+    /// <summary>Obstruction amount (0 = transparent, 1 = fully solid).</summary>
+    API_FIELD(Attributes = "EditorOrder(1), Limit(0, 1, 0.01f)")
+    float Amount = 1.0f;
+};
+
+/// <summary>Obstruction amount assigned to a surface tag or tag hierarchy.</summary>
+API_STRUCT(Namespace = "AmplitudeAudio")
+struct AMPLITUDEAUDIO_API AmplitudeObstructionTagAmount : public ISerializable
+{
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeObstructionTagAmount);
+    API_AUTO_SERIALIZATION();
+
+    /// <summary>The surface tag matched against PhysicalMaterial.Tag.</summary>
+    API_FIELD(Attributes = "EditorOrder(0)")
+    Tag SurfaceTag;
+
+    /// <summary>Obstruction amount (0 = transparent, 1 = fully solid).</summary>
+    API_FIELD(Attributes = "EditorOrder(1), Limit(0, 1, 0.01f)")
+    float Amount = 1.0f;
+};
+
+/// <summary>Settings for physics ray cast obstruction and occlusion.</summary>
+API_STRUCT(Namespace = "AmplitudeAudio")
+struct AMPLITUDEAUDIO_API AmplitudeObstructionSettings : public ISerializable
+{
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeObstructionSettings);
+    API_AUTO_SERIALIZATION();
+
+    /// <summary>Default obstruction amount when a surface has no material or tag rule.</summary>
+    API_FIELD(Attributes = "EditorOrder(0), Limit(0, 1, 0.01f)")
+    float DefaultAmount = 1.0f;
+
+    /// <summary>Per-material obstruction amounts.</summary>
+    API_FIELD(Attributes = "EditorOrder(1)")
+    Array<AmplitudeObstructionMaterialAmount> MaterialAmounts;
+
+    /// <summary>Per-tag obstruction amounts.</summary>
+    API_FIELD(Attributes = "EditorOrder(2)")
+    Array<AmplitudeObstructionTagAmount> TagAmounts;
+
+    /// <summary>Maximum distance from listener at which obstruction rays are cast (units).</summary>
+    API_FIELD(Attributes = "EditorOrder(3), Limit(0)")
+    float MaxDistance = 5000.0f;
+
+    /// <summary>Distance up to which obstruction is fully applied before linear falloff to MaxDistance.</summary>
+    API_FIELD(Attributes = "EditorOrder(4), Limit(0)")
+    float FullObstructionDistance = 1000.0f;
+
+    /// <summary>Maximum rays cast per frame across all sources.</summary>
+    API_FIELD(Attributes = "EditorOrder(5), Limit(0)")
+    int32 RayBudgetPerFrame = 16;
+
+    /// <summary>Number of indirect rays in a full disk cycle for MultipleRays mode.</summary>
+    API_FIELD(Attributes = "EditorOrder(6), Limit(0)")
+    int32 IndirectRayCount = 8;
+
+    /// <summary>Radius of the indirect ray disk around the listener (units).</summary>
+    API_FIELD(Attributes = "EditorOrder(7), Limit(0)")
+    float IndirectRadius = 150.0f;
+
+    /// <summary>Seed used to generate deterministic indirect disk ray offsets.</summary>
+    API_FIELD(Attributes = "EditorOrder(8)")
+    uint32 RandomSeed = 1337;
+
+    /// <summary>Smoothing time constant when obstruction increases (seconds).</summary>
+    API_FIELD(Attributes = "EditorOrder(9), Limit(0)")
+    float AttackSmoothing = 0.05f;
+
+    /// <summary>Smoothing time constant when obstruction decreases (seconds).</summary>
+    API_FIELD(Attributes = "EditorOrder(10), Limit(0)")
+    float ReleaseSmoothing = 0.25f;
+
+    /// <summary>Physics layer mask used for obstruction ray casts.</summary>
+    API_FIELD(Attributes = "EditorOrder(11)")
+    LayersMask Layers;
+
+    /// <summary>Draw debug visualization lines for obstruction rays.</summary>
+    API_FIELD(Attributes = "EditorOrder(12)")
+    bool DebugDraw = false;
 };
 
 /// <summary>Amplitude startup configuration for one platform.</summary>
@@ -138,6 +249,10 @@ public:
     /// <summary>Compression block size, in KB.</summary>
     API_FIELD(Attributes = "EditorOrder(23), EditorDisplay(\"Cooking\"), Limit(1)")
     int32 BlockSize = 64;
+
+    /// <summary>Physics obstruction and occlusion settings.</summary>
+    API_FIELD(Attributes = "EditorOrder(30), EditorDisplay(\"Obstruction\")")
+    AmplitudeObstructionSettings Obstruction;
 
     /// <summary>Returns the profile for <paramref name="platform"/>, or DefaultProfile when none matches.</summary>
     AmplitudePlatformProfile GetProfile(PlatformType platform) const;
