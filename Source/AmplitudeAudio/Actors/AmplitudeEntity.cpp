@@ -60,6 +60,7 @@ void AmplitudeEntity::OnEngineStarted()
     _entity = engine->AddEntity(static_cast<SparkyStudios::Audio::Amplitude::AmObjectID>(
         AmplitudeService::Get().AllocateId()));
     PushState();
+    AmplitudeService::Get().GetOcclusion().AddSource(this);
 }
 
 void AmplitudeEntity::OnEngineStopping()
@@ -68,9 +69,34 @@ void AmplitudeEntity::OnEngineStopping()
     if (!_entity.Valid())
         return;
 
+    AmplitudeService::Get().GetOcclusion().RemoveSource(this);
+    ApplyOcclusion(0.0f, 0.0f);
     if (auto* engine = AmplitudeService::Get().GetEngine())
         engine->RemoveEntity(&_entity);
     _entity.Clear();
+}
+
+AmplitudeObstructionMode AmplitudeEntity::GetObstructionMode() const
+{
+    return ObstructionMode;
+}
+
+bool AmplitudeEntity::IsOcclusionActive() const
+{
+    return _entity.Valid() && _entity.GetActiveChannelCount() > 0;
+}
+
+Vector3 AmplitudeEntity::GetOcclusionLocation() const
+{
+    return GetPosition();
+}
+
+void AmplitudeEntity::ApplyOcclusion(float obstruction, float occlusion)
+{
+    if (!_entity.Valid())
+        return;
+    _entity.SetObstruction(obstruction);
+    _entity.SetOcclusion(occlusion);
 }
 
 void AmplitudeEntity::Register()
@@ -137,6 +163,8 @@ void AmplitudeEntity::Serialize(SerializeStream& stream, const void* otherObj)
     SERIALIZE_GET_OTHER_OBJ(AmplitudeEntity);
     SERIALIZE_MEMBER(Directivity, Directivity);
     SERIALIZE_MEMBER(Sharpness, Sharpness);
+    SERIALIZE_MEMBER(ObstructionMode, ObstructionMode);
+    SERIALIZE_MEMBER(ObstructionLayers, ObstructionLayers);
 }
 
 void AmplitudeEntity::Deserialize(DeserializeStream& stream, ISerializeModifier* modifier)
@@ -144,6 +172,8 @@ void AmplitudeEntity::Deserialize(DeserializeStream& stream, ISerializeModifier*
     Actor::Deserialize(stream, modifier);
     DESERIALIZE_MEMBER(Directivity, Directivity);
     DESERIALIZE_MEMBER(Sharpness, Sharpness);
+    DESERIALIZE_MEMBER(ObstructionMode, ObstructionMode);
+    DESERIALIZE_MEMBER(ObstructionLayers, ObstructionLayers);
 }
 
 IAmplitudeEmitter* AmplitudeEntity::GetEmitter(const ::StringView& name)

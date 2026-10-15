@@ -36,6 +36,7 @@ namespace AmplitudeAudio
         void AddSource(IOcclusionSource* source);
         void RemoveSource(IOcclusionSource* source);
         int32 GetSourceCount() const;
+        void Clear() { _states.Clear(); _lastRays = 0; }
 
         void Update(const Vector3& listener, float deltaSeconds, const AmplitudeObstructionSettings& settings, const CastFunction& cast);
 
@@ -44,6 +45,7 @@ namespace AmplitudeAudio
 
         /// <summary>Sets or clears an observer callback for cast rays (e.g. for debug drawing).</summary>
         void SetRayObserver(const RayObserver& observer) { _rayObserver = observer; }
+        void ClearRayObserver() { _rayObserver.Unbind(); }
 
     private:
         struct SourceState

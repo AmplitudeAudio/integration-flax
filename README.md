@@ -76,9 +76,30 @@ Add the `AmplitudeSoundBank` script to an actor and set its `Bank` to the bank f
 
 - Add an `AmplitudeListener` to the camera (or another actor) to provide the listener position. The last enabled listener with `IsDefault` enabled is the default listener.
 - Add an `AmplitudeEntity` to each actor that emits or receives sounds. Attach emitters and event scripts to that actor or its descendants.
+  - Set `ObstructionMode` to `SingleRay` or `MultipleRays` to enable physics obstruction ray casting for sounds emitted by this entity.
+  - Set `ObstructionLayers` to filter which physics collision layers block sound.
 - Add an `AmplitudeEmitter` script and choose its `SoundObject`. `PlayOnStart` starts playback automatically; `StopOnDisable` controls whether disabling the script stops it.
 - Add an `AmplitudeEvent` script and choose its event. It can trigger on start or enable, resolve the nearest ancestor `AmplitudeEntity`, and cancel its events on disable.
+- Add an `AmplitudeObstruction` script to colliders to override their obstruction amount (`0` = transparent, `1` = fully solid), bypassing physical material and tag rules.
 - `AmplitudeSpatialization.Auto` uses the entity when available and otherwise the location; `Entity` and `Location` force those modes, while `None` disables spatialization.
+
+### Physics Obstruction & Occlusion
+
+The plugin evaluates environmental obstruction and occlusion between the active listener and `AmplitudeEntity` emitters:
+
+1. **Surface Table Resolution:** When a ray hits scene geometry, the transmission amount is resolved in order:
+   - An `AmplitudeObstruction` script attached to the hit collider.
+   - An exact match in `AmplitudeSettings.Obstruction.MaterialAmounts` for the hit collider's `PhysicalMaterial`.
+   - A hierarchical tag match in `AmplitudeSettings.Obstruction.TagAmounts` against `PhysicalMaterial.Tag` (e.g. `Surface.Wood.Thin` -> `Surface.Wood` -> `Surface`).
+   - The fallback `DefaultAmount`.
+2. **Ray Modes:**
+   - `SingleRay`: Casts a direct ray between emitter and listener. Any blockage produces pure **obstruction**.
+   - `MultipleRays`: Casts 1 direct ray plus indirect rays distributed on a disk around the listener. When direct path is blocked but an indirect ray finds an open path, it is classified as **obstruction**; when all paths are blocked, it is classified as **occlusion**.
+3. **Budgeting & Smoothing:**
+   - `RayBudgetPerFrame`: Limits the total rays cast per frame across all active entities. Starved and closer sources receive priority.
+   - `AttackSmoothing` / `ReleaseSmoothing`: Applies exponential filtering over time to prevent sudden audio popping.
+   - `DebugDraw`: Visualizes direct (solid) and indirect (faded) ray casts in debug builds.
+4. **Engine Curves:** Values are written directly to SDK entities via `SetObstruction` and `SetOcclusion`, where gain and LPF cutoff frequencies follow curves authored in the Amplitude project configuration.
 
 The static API can also play at a position, trigger events, and control RTPCs and switches:
 

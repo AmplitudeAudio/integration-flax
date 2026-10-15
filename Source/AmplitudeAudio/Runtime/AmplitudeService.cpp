@@ -31,12 +31,18 @@
 #include <SparkyStudios/Audio/Amplitude/IO/PackageFileSystem.h>
 
 #include <AmplitudeAudio/AmplitudeSettings.h>
+#include <AmplitudeAudio/Actors/AmplitudeEntity.h>
 #include <AmplitudeAudio/Core/Common.h>
 #include <AmplitudeAudio/Core/FlaxMemoryAllocator.h>
 #include <AmplitudeAudio/Core/Helpers.h>
 #include <AmplitudeAudio/IO/FlaxFileSystem.h>
 #include <AmplitudeAudio/IO/FlaxLogger.h>
 #include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
+#include <AmplitudeAudio/Runtime/Occlusion/PhysicsOcclusionCaster.h>
+
+#if COMPILE_WITH_DEBUG_DRAW
+#include <Engine/Debug/DebugDraw.h>
+#endif
 
 namespace AmplitudeAudio
 {
@@ -162,6 +168,7 @@ namespace AmplitudeAudio
         ::Engine::Pause.Bind<&AmplitudeService::OnEnginePause>();
         ::Engine::Unpause.Bind<&AmplitudeService::OnEngineUnpause>();
 
+        m_surfacesDirty = true;
         m_running = true;
         LOG(Info, "[Amplitude] Engine started with config '{0}'.", profile.EngineConfigFile);
 
@@ -182,10 +189,16 @@ namespace AmplitudeAudio
             for (IAmplitudeServiceClient* client : m_clients)
                 client->OnEngineStopping();
 
+            m_occlusion.Clear();
+
             ::Engine::Update.Unbind<&AmplitudeService::OnEngineUpdate>();
             ::Engine::Pause.Unbind<&AmplitudeService::OnEnginePause>();
             ::Engine::Unpause.Unbind<&AmplitudeService::OnEngineUnpause>();
             m_running = false;
+        }
+        else
+        {
+            m_occlusion.Clear();
         }
 
         if (m_engine != nullptr)
@@ -248,6 +261,45 @@ namespace AmplitudeAudio
 
         ApplyPause();
         m_banks.Update();
+
+        const AmplitudeSettings* settings = AmplitudeSettings::Get();
+        const AmplitudeObstructionSettings defaults;
+        const AmplitudeObstructionSettings& obstruction = settings ? settings->Obstruction : defaults;
+
+        if (m_surfacesDirty || m_surfaces.HasUnresolved())
+        {
+            m_surfaces.Build(obstruction);
+            m_surfacesDirty = false;
+        }
+
+        const auto listener = m_engine->GetDefaultListener();
+        if (listener.Valid() && m_occlusion.GetSourceCount() > 0)
+        {
+            const PhysicsOcclusionCaster caster(obstruction, m_surfaces);
+#if COMPILE_WITH_DEBUG_DRAW
+            if (obstruction.DebugDraw)
+            {
+                m_occlusion.SetRayObserver([](const Vector3& from, const Vector3& to, float amount, bool isDirect) {
+                    Color color = Color::Lerp(Color::Green, Color::Red, amount);
+                    if (!isDirect)
+                        color.A *= 0.5f;
+                    DebugDraw::DrawLine(from, to, color, 0.0f);
+                });
+            }
+#endif
+            m_occlusion.Update(AmVec3ToFlaxVec3(listener.GetLocation()), ::Time::Update.UnscaledDeltaTime.GetTotalSeconds(), obstruction,
+                [&caster](IOcclusionSource& source, const Vector3& from, const Vector3& to) {
+                    auto* entity = static_cast<AmplitudeEntity*>(&source);
+                    return caster.Cast(entity, entity->ObstructionLayers.Mask, from, to);
+                });
+#if COMPILE_WITH_DEBUG_DRAW
+            if (obstruction.DebugDraw)
+            {
+                m_occlusion.ClearRayObserver();
+            }
+#endif
+        }
+
         m_engine->AdvanceFrame(::Time::Update.UnscaledDeltaTime.GetTotalMilliseconds());
 
         // Dispatch posted work on the main thread

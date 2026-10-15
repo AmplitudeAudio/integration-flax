@@ -31,6 +31,8 @@
 
 #include <AmplitudeAudio/Core/BankRegistry.h>
 #include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
+#include <AmplitudeAudio/Runtime/Occlusion/AmplitudeOcclusionProcessor.h>
+#include <AmplitudeAudio/Runtime/Occlusion/ObstructionSurfaces.h>
 
 struct AmplitudePlatformProfile;
 
@@ -83,6 +85,9 @@ namespace AmplitudeAudio
         /// <summary>Returns the SDK engine pointer, or nullptr when not running.</summary>
         [[nodiscard]] SparkyStudios::Audio::Amplitude::Engine* GetEngine() const;
 
+        /// <summary>Returns the occlusion processor.</summary>
+        [[nodiscard]] AmplitudeOcclusionProcessor& GetOcclusion() { return m_occlusion; }
+
         /// <summary>Allocates a unique, non-reusable ID for scene objects (listener, entity, etc.).</summary>
         [[nodiscard]] SparkyStudios::Audio::Amplitude::AmObjectID AllocateId();
 
@@ -109,7 +114,10 @@ namespace AmplitudeAudio
         std::shared_ptr<SparkyStudios::Audio::Amplitude::FileSystem> m_fileSystem;
         std::vector<SparkyStudios::Audio::Amplitude::AmOsString> m_pluginSearchPaths;
         BankRegistry m_banks;
+        AmplitudeOcclusionProcessor m_occlusion;
+        ObstructionSurfaces m_surfaces;
         bool m_running = false;
+        bool m_surfacesDirty = true;
         bool m_ownsMemoryManager = false;
         bool m_usingPackage = false;
         bool m_extensionsRegistered = false;
