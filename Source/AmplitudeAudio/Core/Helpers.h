@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include <Engine/Core/Collections/Array.h>
 #include <Engine/Core/Math/Vector3.h>
 #include <Engine/Core/Types/String.h>
 
@@ -33,6 +34,9 @@ namespace AmplitudeAudio
 
     /// <summary>Converts a Flax Vector3 to an Amplitude AmVector3.</summary>
     AMPLITUDEAUDIO_API AmVector3 FlaxVec3ToAmVec3(const Vector3& vec);
+
+    /// <summary>Converts a list of Amplitude lengths (meters) to Flax units.</summary>
+    AMPLITUDEAUDIO_API Array<float> AmLengthsToFlaxUnits(const Array<float>& lengths);
 
     /// <summary>Converts Flax dimensions to Amplitude shape dimensions with axis mapping.</summary>
     AMPLITUDEAUDIO_API AmVector3 ToAmDimensions(const Vector3& dimensions);

@@ -25,6 +25,7 @@
 
 #include <AmplitudeAudio/Actors/AmplitudeEntity.h>
 #include <AmplitudeAudio/Amplitude.h>
+#include <AmplitudeAudio/Core/Helpers.h>
 #include <AmplitudeAudio/Runtime/Spatial/SpatialMath.h>
 #include <AmplitudeAudio/Types/AmplitudeChannel.h>
 
@@ -130,8 +131,8 @@ void AmplitudeEmitter::OnDisable()
 void AmplitudeEmitter::SetEditorAttenuation(int32 kind, const Array<float>& inner, const Array<float>& outer)
 {
     _attenuationKind = kind;
-    _attenuationInner = inner;
-    _attenuationOuter = outer;
+    _attenuationInner = AmplitudeAudio::AmLengthsToFlaxUnits(inner);
+    _attenuationOuter = AmplitudeAudio::AmLengthsToFlaxUnits(outer);
 }
 
 void AmplitudeEmitter::ClearEditorAttenuation()

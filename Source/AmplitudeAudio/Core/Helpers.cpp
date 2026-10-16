@@ -39,6 +39,15 @@ namespace AmplitudeAudio
         return result;
     }
 
+    Array<float> AmLengthsToFlaxUnits(const Array<float>& lengths)
+    {
+        Array<float> result(lengths.Count());
+        for (const float length : lengths)
+            result.Add(length * METERS_TO_UNITS_SCALE);
+
+        return result;
+    }
+
     std::string FlaxStringToStdString(const ::String& value)
     {
         const ::StringAnsi ansi = value.ToStringAnsi();

@@ -222,8 +222,8 @@ void AmplitudeInstancedEmitter::OnUpdate()
 void AmplitudeInstancedEmitter::SetEditorAttenuation(int32 kind, const Array<float>& inner, const Array<float>& outer)
 {
     _attenuationKind = kind;
-    _attenuationInner = inner;
-    _attenuationOuter = outer;
+    _attenuationInner = AmplitudeAudio::AmLengthsToFlaxUnits(inner);
+    _attenuationOuter = AmplitudeAudio::AmLengthsToFlaxUnits(outer);
 }
 
 void AmplitudeInstancedEmitter::ClearEditorAttenuation()
