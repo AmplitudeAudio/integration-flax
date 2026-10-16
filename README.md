@@ -83,6 +83,26 @@ Add the `AmplitudeSoundBank` script to an actor and set its `Bank` to the bank f
 - Add an `AmplitudeObstruction` script to colliders to override their obstruction amount (`0` = transparent, `1` = fully solid), bypassing physical material and tag rules.
 - `AmplitudeSpatialization.Auto` uses the entity when available and otherwise the location; `Entity` and `Location` force those modes, while `None` disables spatialization.
 
+### Rooms and environments
+
+- **AmplitudeRoom**: Represents an acoustic enclosure with defined dimensions, gain factor, and per-wall materials (e.g. `ConcreteUnpainted`, `Glass`, `Wood`, `GypsumBoard`).
+  - Requires `"track_rooms": true` in the Amplitude project engine config's `game` section.
+  - When rooms overlap or are nested (such as a closet within a large hall), the smallest volume containing the listener or entity wins.
+- **AmplitudeEnvironment**: Defines regional environmental effects and reverberation zones with customizable shapes (`Box`, `Sphere`, `Capsule`, `Cone`) and a linear `BlendDistance`.
+  - Requires `"track_environments": true` in the Amplitude project engine config's `game` section.
+  - Effect blend factors fade linearly from `1.0` inside the zone to `0.0` at the outer blend boundary.
+- **Attenuation Gizmo**: When an emitter or instanced emitter is selected in the editor, wireframe attenuation shapes (inner and outer boundaries) are automatically drawn in the viewport based on the sound object's configured attenuator.
+
+### Instanced sounds
+
+- **AmplitudeSoundInstance**: Places sound instances in the world for multi-point emitters. Each instance supports independent location, orientation tracking toggle, weight, room assignment, and obstruction calculations.
+- **AmplitudeInstancedEmitter**: Emits a sound object across multiple bound `AmplitudeSoundInstance` actors.
+  - Supports `Blended` (shared spatialized stream) and `Separate` (independent cursor) playback modes.
+  - Automatically reconciles active and enabled instances each frame.
+- **Instance Generators**:
+  - `AmplitudePointInstanceGenerator`: Spawns and manages `AmplitudeSoundInstance` actors at an array of local point offsets.
+  - `AmplitudeSplineInstanceGenerator`: Spawns and manages `AmplitudeSoundInstance` actors spaced equally along a `Spline` actor by arc length.
+
 ### Physics Obstruction & Occlusion
 
 The plugin evaluates environmental obstruction and occlusion between the active listener and `AmplitudeEntity` emitters:
