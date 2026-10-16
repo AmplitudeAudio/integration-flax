@@ -49,6 +49,7 @@ namespace AmplitudeAudio::Spatial
                                                    // Cone: X = base radius, Y = height.
 
         static ZoneShape MakeBox(const Vector3& center, const Quaternion& rotation, const Vector3& halfExtents);
+        static ZoneShape MakeSphere(const Vector3& center, float radius);
     };
 
     /// <summary>Whether the point is inside or on the surface of the box.</summary>

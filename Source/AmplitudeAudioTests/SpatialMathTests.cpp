@@ -115,3 +115,38 @@ TEST_CASE("the zone kind decides which extents matter", "[spatial-math]")
     CHECK(box.Kind == ZoneKind::Box);
     CHECK(box.Extents == Vector3(10, 20, 30));
 }
+
+TEST_CASE("a sphere zone is distance to the surface", "[spatial-math][zone-sphere]")
+{
+    const ZoneShape zone = ZoneShape::MakeSphere(Vector3(100, 0, 0), 50.0f);
+    CHECK(zone.Kind == ZoneKind::Sphere);
+
+    CHECK(DistanceTo(zone, Vector3(100, 0, 0)) == Approx(0.0f));
+    CHECK(DistanceTo(zone, Vector3(150, 0, 0)) == Approx(0.0f)); // on the surface
+    CHECK(DistanceTo(zone, Vector3(200, 0, 0)) == Approx(50.0f));
+    CHECK(DistanceTo(zone, Vector3(100, 0, 90)) == Approx(40.0f));
+}
+
+TEST_CASE("a sphere zone blends linearly outside", "[spatial-math][zone-sphere]")
+{
+    const ZoneShape zone = ZoneShape::MakeSphere(Vector3::Zero, 50.0f);
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(0, 20, 0)) == Approx(1.0f));
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(100, 0, 0)) == Approx(0.5f));
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(150, 0, 0)) == Approx(0.0f));
+    CHECK(EnvironmentFactor(zone, 0.0f, Vector3(51, 0, 0)) == Approx(0.0f));
+}
+
+TEST_CASE("a sphere zone ignores rotation", "[spatial-math][zone-sphere]")
+{
+    ZoneShape zone = ZoneShape::MakeSphere(Vector3::Zero, 50.0f);
+    const float before = DistanceTo(zone, Vector3(120, 30, -40));
+    zone.Rotation = Quaternion::Euler(33, 77, 12);
+    CHECK(DistanceTo(zone, Vector3(120, 30, -40)) == Approx(before));
+}
+
+TEST_CASE("a zero radius sphere is a point", "[spatial-math][zone-sphere]")
+{
+    const ZoneShape zone = ZoneShape::MakeSphere(Vector3::Zero, 0.0f);
+    CHECK(DistanceTo(zone, Vector3::Zero) == Approx(0.0f));
+    CHECK(DistanceTo(zone, Vector3(10, 0, 0)) == Approx(10.0f));
+}

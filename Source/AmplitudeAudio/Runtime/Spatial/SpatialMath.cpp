@@ -28,6 +28,15 @@ namespace AmplitudeAudio::Spatial
         return zone;
     }
 
+    ZoneShape ZoneShape::MakeSphere(const Vector3& center, float radius)
+    {
+        ZoneShape zone;
+        zone.Kind = ZoneKind::Sphere;
+        zone.Center = center;
+        zone.Extents = Vector3(Math::Max(radius, 0.0f), 0.0f, 0.0f);
+        return zone;
+    }
+
     bool Contains(const OrientedBox& box, const Vector3& point)
     {
         const Vector3 local = Quaternion::Invert(box.Rotation) * (point - box.Center);
@@ -49,8 +58,10 @@ namespace AmplitudeAudio::Spatial
         {
         case ZoneKind::Box:
             return DistanceTo(OrientedBox{ zone.Center, zone.Rotation, zone.Extents }, point);
+        case ZoneKind::Sphere:
+            return Math::Max(Vector3::Distance(point, zone.Center) - zone.Extents.X, 0.0f);
         default:
-            return 0.0f;
+            return 0.0f; // Capsule and Cone arrive in Tasks 7-8; until then they are everywhere.
         }
     }
 

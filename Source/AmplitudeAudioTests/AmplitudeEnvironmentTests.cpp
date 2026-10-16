@@ -110,3 +110,46 @@ TEST_CASE("an environment is a box by default and describes its zone", "[environ
     CHECK(zone.Extents == Vector3(200, 150, 200));
     environment->DeleteObjectNow();
 }
+
+TEST_CASE("a sphere environment describes its zone", "[environment][zone-sphere]")
+{
+    auto* environment = ScriptingObject::NewObject<AmplitudeEnvironment>();
+    environment->SetPosition(Vector3(1, 2, 3));
+    environment->Shape = AmplitudeEnvironmentShape::Sphere;
+    environment->Radius = 120.0f;
+
+    const auto zone = environment->MakeZone();
+    CHECK(zone.Kind == AmplitudeAudio::Spatial::ZoneKind::Sphere);
+    CHECK(zone.Center == Vector3(1, 2, 3));
+    CHECK(zone.Extents.X == Approx(120.0f));
+    environment->DeleteObjectNow();
+}
+
+TEST_CASE("an entity inside a sphere environment receives its factor", "[environment][zone-sphere]")
+{
+    String root, buildPath;
+    REQUIRE_TEST_PROJECT(root, buildPath);
+    ServiceGuard guard;
+    REQUIRE(AmplitudeService::Get().Startup(MakeProfile(TEXT("pc.config.amconfig")), root, buildPath));
+
+    auto* environment = ScriptingObject::NewObject<AmplitudeEnvironment>();
+    environment->Shape = AmplitudeEnvironmentShape::Sphere;
+    environment->Radius = 100.0f;
+    environment->BlendDistance = 100.0f;
+    environment->OnBeginPlay();
+    const auto id = static_cast<SparkyStudios::Audio::Amplitude::AmEnvironmentID>(environment->GetEnvironmentId());
+    auto* entity = ScriptingObject::NewObject<AmplitudeEntity>();
+    entity->OnBeginPlay();
+
+    AmplitudeService::Get().Tick();
+    CHECK(entity->GetHandle().GetEnvironmentFactor(id) == Approx(1.0f));
+
+    entity->SetPosition(Vector3(150, 0, 0)); // 50 outside a radius of 100, halfway through the blend
+    AmplitudeService::Get().Tick();
+    CHECK(entity->GetHandle().GetEnvironmentFactor(id) == Approx(0.5f));
+
+    entity->OnEndPlay();
+    environment->OnEndPlay();
+    entity->DeleteObjectNow();
+    environment->DeleteObjectNow();
+}

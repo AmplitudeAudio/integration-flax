@@ -49,12 +49,16 @@ public:
     API_FIELD(Attributes = "EditorOrder(1)")
     Vector3 Size = Vector3(400.0f, 300.0f, 400.0f);
 
-    /// <summary>Distance outside the zone over which the effect fades linearly to zero.</summary>
+    /// <summary>Sphere, capsule and cone base radius.</summary>
     API_FIELD(Attributes = "EditorOrder(2), Limit(0)")
+    float Radius = 200.0f;
+
+    /// <summary>Distance outside the zone over which the effect fades linearly to zero.</summary>
+    API_FIELD(Attributes = "EditorOrder(3), Limit(0)")
     float BlendDistance = 100.0f;
 
     /// <summary>Environment effect applied within this zone.</summary>
-    API_FIELD(Attributes = "EditorOrder(3)")
+    API_FIELD(Attributes = "EditorOrder(4)")
     AmplitudeEnvironmentEffectRef Effect;
 
     /// <summary>Whether the SDK environment handle is valid.</summary>

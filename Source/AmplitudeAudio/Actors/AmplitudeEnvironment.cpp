@@ -124,14 +124,35 @@ void AmplitudeEnvironment::PushState() const
     if (!_environment.Valid())
         return;
 
-    const SparkyStudios::Audio::Amplitude::AmVector3 innerExtents = AmplitudeAudio::ToAmDimensions(Size * 0.5f);
-    const SparkyStudios::Audio::Amplitude::AmVector3 outerExtents = AmplitudeAudio::ToAmDimensions(Size * 0.5f + Vector3(BlendDistance));
+    std::shared_ptr<SparkyStudios::Audio::Amplitude::Zone> zone;
+    switch (Shape)
+    {
+    case AmplitudeEnvironmentShape::Sphere:
+        {
+            const SparkyStudios::Audio::Amplitude::AmVector3 innerExtents = AmplitudeAudio::ToAmDimensions(Vector3(Radius, 0, 0));
+            const SparkyStudios::Audio::Amplitude::AmVector3 outerExtents = AmplitudeAudio::ToAmDimensions(Vector3(Radius + BlendDistance, 0, 0));
 
-    auto inner = amshared(SparkyStudios::Audio::Amplitude::BoxShape, innerExtents[0], innerExtents[1], innerExtents[2]);
-    auto outer = amshared(SparkyStudios::Audio::Amplitude::BoxShape, outerExtents[0], outerExtents[1], outerExtents[2]);
-    auto zone = amshared(SparkyStudios::Audio::Amplitude::BoxZone, inner, outer);
+            auto inner = amshared(SparkyStudios::Audio::Amplitude::SphereShape, innerExtents[0]);
+            auto outer = amshared(SparkyStudios::Audio::Amplitude::SphereShape, outerExtents[0]);
+            zone = amshared(SparkyStudios::Audio::Amplitude::SphereZone, inner, outer);
+            break;
+        }
+    case AmplitudeEnvironmentShape::Box:
+    default:
+        {
+            const SparkyStudios::Audio::Amplitude::AmVector3 innerExtents = AmplitudeAudio::ToAmDimensions(Size * 0.5f);
+            const SparkyStudios::Audio::Amplitude::AmVector3 outerExtents = AmplitudeAudio::ToAmDimensions(Size * 0.5f + Vector3(BlendDistance));
 
-    _environment.SetZone(zone);
+            auto inner = amshared(SparkyStudios::Audio::Amplitude::BoxShape, innerExtents[0], innerExtents[1], innerExtents[2]);
+            auto outer = amshared(SparkyStudios::Audio::Amplitude::BoxShape, outerExtents[0], outerExtents[1], outerExtents[2]);
+            zone = amshared(SparkyStudios::Audio::Amplitude::BoxZone, inner, outer);
+            break;
+        }
+    }
+
+    if (zone)
+        _environment.SetZone(zone);
+
     _environment.SetLocation(AmplitudeAudio::FlaxVec3ToAmVec3(GetPosition()));
     _environment.SetOrientation(AmplitudeAudio::FlaxOrientationToAm(GetTransform().GetForward(), GetTransform().GetUp()));
 
@@ -141,6 +162,9 @@ void AmplitudeEnvironment::PushState() const
 
 AmplitudeAudio::Spatial::ZoneShape AmplitudeEnvironment::MakeZone() const
 {
+    if (Shape == AmplitudeEnvironmentShape::Sphere)
+        return AmplitudeAudio::Spatial::ZoneShape::MakeSphere(GetPosition(), Radius);
+
     return AmplitudeAudio::Spatial::ZoneShape::MakeBox(GetPosition(), GetOrientation(), Size * 0.5f);
 }
 
@@ -152,17 +176,31 @@ EnvironmentCandidate AmplitudeEnvironment::MakeCandidate() const
 #if USE_EDITOR
 void AmplitudeEnvironment::OnDebugDrawSelected()
 {
-    OrientedBoundingBox obb(Vector3::Zero, Size * 0.5f);
-    obb.Transform(GetTransform());
-    DebugDraw::DrawWireBox(obb, Color::Orange);
-
-    if (BlendDistance > 0.0f)
+    if (Shape == AmplitudeEnvironmentShape::Sphere)
     {
-        OrientedBoundingBox blendObb(Vector3::Zero, Size * 0.5f + Vector3(BlendDistance));
-        blendObb.Transform(GetTransform());
-        Color blendColor = Color::Orange;
-        blendColor.A *= 0.5f;
-        DebugDraw::DrawWireBox(blendObb, blendColor);
+        DebugDraw::DrawWireSphere(BoundingSphere(GetPosition(), Radius), Color::Orange);
+
+        if (BlendDistance > 0.0f)
+        {
+            Color blendColor = Color::Orange;
+            blendColor.A *= 0.5f;
+            DebugDraw::DrawWireSphere(BoundingSphere(GetPosition(), Radius + BlendDistance), blendColor);
+        }
+    }
+    else
+    {
+        OrientedBoundingBox obb(Vector3::Zero, Size * 0.5f);
+        obb.Transform(GetTransform());
+        DebugDraw::DrawWireBox(obb, Color::Orange);
+
+        if (BlendDistance > 0.0f)
+        {
+            OrientedBoundingBox blendObb(Vector3::Zero, Size * 0.5f + Vector3(BlendDistance));
+            blendObb.Transform(GetTransform());
+            Color blendColor = Color::Orange;
+            blendColor.A *= 0.5f;
+            DebugDraw::DrawWireBox(blendObb, blendColor);
+        }
     }
 
     Actor::OnDebugDrawSelected();
@@ -175,6 +213,7 @@ void AmplitudeEnvironment::Serialize(SerializeStream& stream, const void* otherO
     SERIALIZE_GET_OTHER_OBJ(AmplitudeEnvironment);
     SERIALIZE(Shape);
     SERIALIZE(Size);
+    SERIALIZE(Radius);
     SERIALIZE(BlendDistance);
     SERIALIZE(Effect);
 }
@@ -184,6 +223,7 @@ void AmplitudeEnvironment::Deserialize(DeserializeStream& stream, ISerializeModi
     Actor::Deserialize(stream, modifier);
     DESERIALIZE(Shape);
     DESERIALIZE(Size);
+    DESERIALIZE(Radius);
     DESERIALIZE(BlendDistance);
     DESERIALIZE(Effect);
 }
