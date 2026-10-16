@@ -35,7 +35,7 @@
 //  project-local guard so the macros run exactly once, regardless of whether
 //  some other header already included <Windows.h> earlier.
 // ============================================================================
-#if defined(PLATFORM_WIN32) || defined(PLATFORM_WINDOWS) || defined(_WIN32)
+#if PLATFORM_WIN32 || PLATFORM_WINDOWS || defined(_WIN32)
 #ifndef AMPLITUDE_WINDOWS_H_PULLED
 #define AMPLITUDE_WINDOWS_H_PULLED
 
