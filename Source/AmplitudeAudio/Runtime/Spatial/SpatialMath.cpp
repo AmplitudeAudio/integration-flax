@@ -37,6 +37,21 @@ namespace AmplitudeAudio::Spatial
         return zone;
     }
 
+    ZoneShape ZoneShape::MakeCapsule(const Vector3& center, const Quaternion& rotation, float radius, float halfHeight)
+    {
+        ZoneShape zone;
+        zone.Kind = ZoneKind::Capsule;
+        zone.Center = center;
+        zone.Rotation = rotation;
+        zone.Extents = Vector3(Math::Max(radius, 0.0f), Math::Max(halfHeight, 0.0f), 0.0f);
+        return zone;
+    }
+
+    Quaternion CapsuleDrawRotation(const Quaternion& actorRotation)
+    {
+        return actorRotation * Quaternion::Euler(-90.0f, 0.0f, 0.0f);
+    }
+
     bool Contains(const OrientedBox& box, const Vector3& point)
     {
         const Vector3 local = Quaternion::Invert(box.Rotation) * (point - box.Center);
@@ -60,8 +75,17 @@ namespace AmplitudeAudio::Spatial
             return DistanceTo(OrientedBox{ zone.Center, zone.Rotation, zone.Extents }, point);
         case ZoneKind::Sphere:
             return Math::Max(Vector3::Distance(point, zone.Center) - zone.Extents.X, 0.0f);
+        case ZoneKind::Capsule:
+            {
+                const float radius = zone.Extents.X;
+                const float halfSegment = Math::Max(zone.Extents.Y - radius, 0.0f);
+                const Vector3 axis = zone.Rotation * Vector3::Up;
+                const Vector3 local = point - zone.Center;
+                const float along = Math::Clamp(Vector3::Dot(local, axis), -halfSegment, halfSegment);
+                return Math::Max(Vector3::Distance(local, axis * along) - radius, 0.0f);
+            }
         default:
-            return 0.0f; // Capsule and Cone arrive in Tasks 7-8; until then they are everywhere.
+            return 0.0f; // Cone arrives in Task 8; until then it is everywhere.
         }
     }
 

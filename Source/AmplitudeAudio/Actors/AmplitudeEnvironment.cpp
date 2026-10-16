@@ -137,6 +137,18 @@ void AmplitudeEnvironment::PushState() const
             zone = amshared(SparkyStudios::Audio::Amplitude::SphereZone, inner, outer);
             break;
         }
+    case AmplitudeEnvironmentShape::Capsule:
+        {
+            const float clampedHalfHeight = Math::Max(HalfHeight, Radius);
+            const float straightHalfHeight = Math::Max(clampedHalfHeight - Radius, 0.0f);
+            const SparkyStudios::Audio::Amplitude::AmVector3 innerExtents = AmplitudeAudio::ToAmDimensions(Vector3(Radius, straightHalfHeight, 0));
+            const SparkyStudios::Audio::Amplitude::AmVector3 outerExtents = AmplitudeAudio::ToAmDimensions(Vector3(Radius + BlendDistance, straightHalfHeight, 0));
+
+            auto inner = amshared(SparkyStudios::Audio::Amplitude::CapsuleShape, innerExtents[0], innerExtents[1]);
+            auto outer = amshared(SparkyStudios::Audio::Amplitude::CapsuleShape, outerExtents[0], outerExtents[1]);
+            zone = amshared(SparkyStudios::Audio::Amplitude::CapsuleZone, inner, outer);
+            break;
+        }
     case AmplitudeEnvironmentShape::Box:
     default:
         {
@@ -164,6 +176,8 @@ AmplitudeAudio::Spatial::ZoneShape AmplitudeEnvironment::MakeZone() const
 {
     if (Shape == AmplitudeEnvironmentShape::Sphere)
         return AmplitudeAudio::Spatial::ZoneShape::MakeSphere(GetPosition(), Radius);
+    if (Shape == AmplitudeEnvironmentShape::Capsule)
+        return AmplitudeAudio::Spatial::ZoneShape::MakeCapsule(GetPosition(), GetOrientation(), Radius, Math::Max(HalfHeight, Radius));
 
     return AmplitudeAudio::Spatial::ZoneShape::MakeBox(GetPosition(), GetOrientation(), Size * 0.5f);
 }
@@ -185,6 +199,19 @@ void AmplitudeEnvironment::OnDebugDrawSelected()
             Color blendColor = Color::Orange;
             blendColor.A *= 0.5f;
             DebugDraw::DrawWireSphere(BoundingSphere(GetPosition(), Radius + BlendDistance), blendColor);
+        }
+    }
+    else if (Shape == AmplitudeEnvironmentShape::Capsule)
+    {
+        const float clampedHalfHeight = Math::Max(HalfHeight, Radius);
+        const float length = Math::Max(2.0f * (clampedHalfHeight - Radius), 0.0f);
+        DebugDraw::DrawWireCapsule(GetPosition(), AmplitudeAudio::Spatial::CapsuleDrawRotation(GetOrientation()), Radius, length, Color::Orange);
+
+        if (BlendDistance > 0.0f)
+        {
+            Color blendColor = Color::Orange;
+            blendColor.A *= 0.5f;
+            DebugDraw::DrawWireCapsule(GetPosition(), AmplitudeAudio::Spatial::CapsuleDrawRotation(GetOrientation()), Radius + BlendDistance, length, blendColor);
         }
     }
     else
@@ -214,6 +241,7 @@ void AmplitudeEnvironment::Serialize(SerializeStream& stream, const void* otherO
     SERIALIZE(Shape);
     SERIALIZE(Size);
     SERIALIZE(Radius);
+    SERIALIZE(HalfHeight);
     SERIALIZE(BlendDistance);
     SERIALIZE(Effect);
 }
@@ -224,6 +252,7 @@ void AmplitudeEnvironment::Deserialize(DeserializeStream& stream, ISerializeModi
     DESERIALIZE(Shape);
     DESERIALIZE(Size);
     DESERIALIZE(Radius);
+    DESERIALIZE(HalfHeight);
     DESERIALIZE(BlendDistance);
     DESERIALIZE(Effect);
 }

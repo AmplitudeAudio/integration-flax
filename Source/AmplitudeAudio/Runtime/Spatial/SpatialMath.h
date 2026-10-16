@@ -50,7 +50,11 @@ namespace AmplitudeAudio::Spatial
 
         static ZoneShape MakeBox(const Vector3& center, const Quaternion& rotation, const Vector3& halfExtents);
         static ZoneShape MakeSphere(const Vector3& center, float radius);
+        static ZoneShape MakeCapsule(const Vector3& center, const Quaternion& rotation, float radius, float halfHeight);
     };
+
+    /// <summary>Returns the rotation to draw a wire capsule whose axis aligns with the actor's local Y axis.</summary>
+    AMPLITUDEAUDIO_API Quaternion CapsuleDrawRotation(const Quaternion& actorRotation);
 
     /// <summary>Whether the point is inside or on the surface of the box.</summary>
     AMPLITUDEAUDIO_API bool Contains(const OrientedBox& box, const Vector3& point);

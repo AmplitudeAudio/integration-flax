@@ -53,12 +53,16 @@ public:
     API_FIELD(Attributes = "EditorOrder(2), Limit(0)")
     float Radius = 200.0f;
 
-    /// <summary>Distance outside the zone over which the effect fades linearly to zero.</summary>
+    /// <summary>Capsule half height (including spherical caps).</summary>
     API_FIELD(Attributes = "EditorOrder(3), Limit(0)")
+    float HalfHeight = 400.0f;
+
+    /// <summary>Distance outside the zone over which the effect fades linearly to zero.</summary>
+    API_FIELD(Attributes = "EditorOrder(4), Limit(0)")
     float BlendDistance = 100.0f;
 
     /// <summary>Environment effect applied within this zone.</summary>
-    API_FIELD(Attributes = "EditorOrder(4)")
+    API_FIELD(Attributes = "EditorOrder(5)")
     AmplitudeEnvironmentEffectRef Effect;
 
     /// <summary>Whether the SDK environment handle is valid.</summary>

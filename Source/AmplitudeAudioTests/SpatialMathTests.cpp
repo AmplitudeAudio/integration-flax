@@ -150,3 +150,60 @@ TEST_CASE("a zero radius sphere is a point", "[spatial-math][zone-sphere]")
     CHECK(DistanceTo(zone, Vector3::Zero) == Approx(0.0f));
     CHECK(DistanceTo(zone, Vector3(10, 0, 0)) == Approx(10.0f));
 }
+
+TEST_CASE("an upright capsule measures to its axis segment", "[spatial-math][zone-capsule]")
+{
+    // radius 50, half height 150 -> the segment runs from y = -100 to y = +100.
+    const ZoneShape zone = ZoneShape::MakeCapsule(Vector3::Zero, Quaternion::Identity, 50.0f, 150.0f);
+    CHECK(zone.Kind == ZoneKind::Capsule);
+
+    CHECK(DistanceTo(zone, Vector3(0, 0, 0)) == Approx(0.0f));
+    CHECK(DistanceTo(zone, Vector3(40, 60, 0)) == Approx(0.0f));    // inside the cylinder
+    CHECK(DistanceTo(zone, Vector3(0, 150, 0)) == Approx(0.0f));    // tip of the cap
+    CHECK(DistanceTo(zone, Vector3(0, 200, 0)) == Approx(50.0f));   // above the cap
+    CHECK(DistanceTo(zone, Vector3(80, 0, 0)) == Approx(30.0f));    // beside the cylinder
+    CHECK(DistanceTo(zone, Vector3(0, -250, 0)) == Approx(100.0f)); // below the other cap
+}
+
+TEST_CASE("a capsule corner is measured to the cap, not the box", "[spatial-math][zone-capsule]")
+{
+    const ZoneShape zone = ZoneShape::MakeCapsule(Vector3::Zero, Quaternion::Identity, 50.0f, 150.0f);
+    // Cap center at (0,100,0): the point (30,140,0) is sqrt(30^2+40^2) = 50 away from it -> on the surface.
+    CHECK(DistanceTo(zone, Vector3(30, 140, 0)) == Approx(0.0f).margin(0.001f));
+    CHECK(DistanceTo(zone, Vector3(60, 160, 0)) == Approx(Vector3(60, 60, 0).Length() - 50.0f));
+}
+
+TEST_CASE("a capsule follows the actor's local Y axis", "[spatial-math][zone-capsule]")
+{
+    const Quaternion rotation = Quaternion::Euler(0, 0, 90); // local Y -> world +/-X
+    const ZoneShape zone = ZoneShape::MakeCapsule(Vector3::Zero, rotation, 50.0f, 150.0f);
+    const Vector3 axis = rotation * Vector3::Up;
+
+    CHECK(DistanceTo(zone, axis * 200.0f) == Approx(50.0f));
+    CHECK(DistanceTo(zone, Vector3::Up * 200.0f) == Approx(150.0f));
+}
+
+TEST_CASE("a capsule shorter than its radius is a sphere", "[spatial-math][zone-capsule]")
+{
+    const ZoneShape zone = ZoneShape::MakeCapsule(Vector3::Zero, Quaternion::Identity, 50.0f, 10.0f);
+    CHECK(DistanceTo(zone, Vector3(0, 80, 0)) == Approx(30.0f));
+    CHECK(DistanceTo(zone, Vector3(80, 0, 0)) == Approx(30.0f));
+}
+
+TEST_CASE("a capsule zone blends linearly outside", "[spatial-math][zone-capsule]")
+{
+    const ZoneShape zone = ZoneShape::MakeCapsule(Vector3::Zero, Quaternion::Identity, 50.0f, 150.0f);
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(0, 0, 0)) == Approx(1.0f));
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(100, 0, 0)) == Approx(0.5f));
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(0, 300, 0)) == Approx(0.0f));
+}
+
+TEST_CASE("the capsule draw rotation points the drawn axis along the actor's up", "[spatial-math][zone-capsule]")
+{
+    for (const Quaternion& actor : {Quaternion::Identity, Quaternion::Euler(0, 90, 0), Quaternion::Euler(30, 45, 60)})
+    {
+        const Vector3 drawn = CapsuleDrawRotation(actor) * Vector3::Forward; // DrawWireCapsule's axis is local Z
+        const Vector3 up = actor * Vector3::Up;
+        CHECK(Vector3::Distance(drawn, up) == Approx(0.0f).margin(0.001f));
+    }
+}
