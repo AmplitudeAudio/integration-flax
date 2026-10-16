@@ -15,9 +15,27 @@
 #include "SpatialMath.h"
 
 #include <Engine/Core/Math/Math.h>
+#include <Engine/Core/Math/Vector2.h>
 
 namespace AmplitudeAudio::Spatial
 {
+    namespace
+    {
+        // Distance from p to the segment ab, in 2D.
+        float SegmentDistance2D(const Vector2& p, const Vector2& a, const Vector2& b)
+        {
+            const Vector2 ab = b - a;
+            const float lengthSquared = Vector2::Dot(ab, ab);
+            const float t = lengthSquared > 0.0f ? Math::Saturate(Vector2::Dot(p - a, ab) / lengthSquared) : 0.0f;
+            return Vector2::Distance(p, a + ab * t);
+        }
+
+        float Cross2D(const Vector2& a, const Vector2& b)
+        {
+            return a.X * b.Y - a.Y * b.X;
+        }
+    }
+
     ZoneShape ZoneShape::MakeBox(const Vector3& center, const Quaternion& rotation, const Vector3& halfExtents)
     {
         ZoneShape zone;
@@ -44,6 +62,16 @@ namespace AmplitudeAudio::Spatial
         zone.Center = center;
         zone.Rotation = rotation;
         zone.Extents = Vector3(Math::Max(radius, 0.0f), Math::Max(halfHeight, 0.0f), 0.0f);
+        return zone;
+    }
+
+    ZoneShape ZoneShape::MakeCone(const Vector3& apex, const Quaternion& rotation, float baseRadius, float height)
+    {
+        ZoneShape zone;
+        zone.Kind = ZoneKind::Cone;
+        zone.Center = apex;
+        zone.Rotation = rotation;
+        zone.Extents = Vector3(Math::Max(baseRadius, 0.0f), Math::Max(height, 0.0f), 0.0f);
         return zone;
     }
 
@@ -84,9 +112,42 @@ namespace AmplitudeAudio::Spatial
                 const float along = Math::Clamp(Vector3::Dot(local, axis), -halfSegment, halfSegment);
                 return Math::Max(Vector3::Distance(local, axis * along) - radius, 0.0f);
             }
-        default:
-            return 0.0f; // Cone arrives in Task 8; until then it is everywhere.
+        case ZoneKind::Cone:
+            {
+                const float radius = zone.Extents.X;
+                const float height = zone.Extents.Y;
+                const Vector3 axis = zone.Rotation * Vector3::Forward;
+                const Vector3 local = point - zone.Center;
+                const float t = Vector3::Dot(local, axis);
+                const float rho = (local - axis * t).Length();
+
+                if (height <= 0.0f)
+                {
+                    // Flat disc at apex or point
+                    const Vector2 p(t, rho), a(0.0f, 0.0f), b(0.0f, radius);
+                    return SegmentDistance2D(p, a, b);
+                }
+                if (radius <= 0.0f)
+                {
+                    // Thin line from apex to base
+                    const Vector2 p(t, rho), a(0.0f, 0.0f), b(height, 0.0f);
+                    return SegmentDistance2D(p, a, b);
+                }
+
+                // Half cross-section: apex, base center, rim. Inside when it is on the same side of all three edges.
+                const Vector2 p(t, rho), a(0.0f, 0.0f), b(height, 0.0f), c(height, radius);
+                const float s1 = Cross2D(b - a, p - a);
+                const float s2 = Cross2D(c - b, p - b);
+                const float s3 = Cross2D(a - c, p - c);
+                const bool hasNegative = s1 < 0.0f || s2 < 0.0f || s3 < 0.0f;
+                const bool hasPositive = s1 > 0.0f || s2 > 0.0f || s3 > 0.0f;
+                if (!(hasNegative && hasPositive))
+                    return 0.0f;
+
+                return Math::Min(SegmentDistance2D(p, a, b), Math::Min(SegmentDistance2D(p, b, c), SegmentDistance2D(p, c, a)));
+            }
         }
+        return 0.0f;
     }
 
     float EnvironmentFactor(const OrientedBox& box, float blendDistance, const Vector3& point)

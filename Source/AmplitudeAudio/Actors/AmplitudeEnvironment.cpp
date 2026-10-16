@@ -149,6 +149,16 @@ void AmplitudeEnvironment::PushState() const
             zone = amshared(SparkyStudios::Audio::Amplitude::CapsuleZone, inner, outer);
             break;
         }
+    case AmplitudeEnvironmentShape::Cone:
+        {
+            const SparkyStudios::Audio::Amplitude::AmVector3 innerExtents = AmplitudeAudio::ToAmDimensions(Vector3(Radius, Height, 0));
+            const SparkyStudios::Audio::Amplitude::AmVector3 outerExtents = AmplitudeAudio::ToAmDimensions(Vector3(Radius + BlendDistance, Height + BlendDistance, 0));
+
+            auto inner = amshared(SparkyStudios::Audio::Amplitude::ConeShape, innerExtents[0], innerExtents[1]);
+            auto outer = amshared(SparkyStudios::Audio::Amplitude::ConeShape, outerExtents[0], outerExtents[1]);
+            zone = amshared(SparkyStudios::Audio::Amplitude::ConeZone, inner, outer);
+            break;
+        }
     case AmplitudeEnvironmentShape::Box:
     default:
         {
@@ -178,6 +188,8 @@ AmplitudeAudio::Spatial::ZoneShape AmplitudeEnvironment::MakeZone() const
         return AmplitudeAudio::Spatial::ZoneShape::MakeSphere(GetPosition(), Radius);
     if (Shape == AmplitudeEnvironmentShape::Capsule)
         return AmplitudeAudio::Spatial::ZoneShape::MakeCapsule(GetPosition(), GetOrientation(), Radius, Math::Max(HalfHeight, Radius));
+    if (Shape == AmplitudeEnvironmentShape::Cone)
+        return AmplitudeAudio::Spatial::ZoneShape::MakeCone(GetPosition(), GetOrientation(), Radius, Height);
 
     return AmplitudeAudio::Spatial::ZoneShape::MakeBox(GetPosition(), GetOrientation(), Size * 0.5f);
 }
@@ -214,6 +226,24 @@ void AmplitudeEnvironment::OnDebugDrawSelected()
             DebugDraw::DrawWireCapsule(GetPosition(), AmplitudeAudio::Spatial::CapsuleDrawRotation(GetOrientation()), Radius + BlendDistance, length, blendColor);
         }
     }
+    else if (Shape == AmplitudeEnvironmentShape::Cone)
+    {
+        const Vector3 forward = GetOrientation() * Vector3::Forward;
+        const Vector3 right = GetOrientation() * Vector3::Right;
+        const Vector3 up = GetOrientation() * Vector3::Up;
+        const Vector3 baseCenter = GetPosition() + forward * Height;
+
+        Vector3 previous = baseCenter + right * Radius;
+        for (int32 i = 1; i <= 24; i++)
+        {
+            const float angle = i * (TWO_PI / 24.0f);
+            const Vector3 rim = baseCenter + (right * Math::Cos(angle) + up * Math::Sin(angle)) * Radius;
+            DebugDraw::DrawLine(previous, rim, Color::Orange);
+            if (i % 3 == 0)
+                DebugDraw::DrawLine(GetPosition(), rim, Color::Orange);
+            previous = rim;
+        }
+    }
     else
     {
         OrientedBoundingBox obb(Vector3::Zero, Size * 0.5f);
@@ -242,6 +272,7 @@ void AmplitudeEnvironment::Serialize(SerializeStream& stream, const void* otherO
     SERIALIZE(Size);
     SERIALIZE(Radius);
     SERIALIZE(HalfHeight);
+    SERIALIZE(Height);
     SERIALIZE(BlendDistance);
     SERIALIZE(Effect);
 }
@@ -253,6 +284,7 @@ void AmplitudeEnvironment::Deserialize(DeserializeStream& stream, ISerializeModi
     DESERIALIZE(Size);
     DESERIALIZE(Radius);
     DESERIALIZE(HalfHeight);
+    DESERIALIZE(Height);
     DESERIALIZE(BlendDistance);
     DESERIALIZE(Effect);
 }

@@ -207,3 +207,70 @@ TEST_CASE("the capsule draw rotation points the drawn axis along the actor's up"
         CHECK(Vector3::Distance(drawn, up) == Approx(0.0f).margin(0.001f));
     }
 }
+
+TEST_CASE("a cone contains the points between the apex and the base", "[spatial-math][zone-cone]")
+{
+    const ZoneShape zone = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 100.0f, 200.0f);
+    CHECK(zone.Kind == ZoneKind::Cone);
+
+    CHECK(DistanceTo(zone, Vector3(0, 0, 0)) == Approx(0.0f));      // the apex
+    CHECK(DistanceTo(zone, Vector3(0, 0, 100)) == Approx(0.0f));    // on the axis
+    CHECK(DistanceTo(zone, Vector3(40, 0, 100)) == Approx(0.0f));   // radius at t=100 is 50
+    CHECK(DistanceTo(zone, Vector3(90, 0, 200)) == Approx(0.0f));   // on the base disc
+}
+
+TEST_CASE("a cone is narrow near the apex", "[spatial-math][zone-cone]")
+{
+    const ZoneShape zone = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 100.0f, 200.0f);
+    CHECK(DistanceTo(zone, Vector3(40, 0, 20)) > 0.0f); // radius at t=20 is only 10
+}
+
+TEST_CASE("distance behind the apex, past the base and to the slanted side", "[spatial-math][zone-cone]")
+{
+    const ZoneShape zone = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 100.0f, 200.0f);
+
+    CHECK(DistanceTo(zone, Vector3(0, 0, -30)) == Approx(30.0f));
+    CHECK(DistanceTo(zone, Vector3(0, 0, 250)) == Approx(50.0f));
+    // (t=100, rho=100) to the slanted edge (0,0)-(200,100): |100*0.4472 - 100*0.8944| = 44.72
+    CHECK(DistanceTo(zone, Vector3(100, 0, 100)) == Approx(44.72f).margin(0.05f));
+    // Beyond the rim: nearest point is the rim (t=200, rho=100); the offset is (100, 50)
+    CHECK(DistanceTo(zone, Vector3(150, 0, 300)) == Approx(111.80f).margin(0.05f));
+}
+
+TEST_CASE("a cone is symmetric around its axis", "[spatial-math][zone-cone]")
+{
+    const ZoneShape zone = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 100.0f, 200.0f);
+    const float a = DistanceTo(zone, Vector3(100, 0, 100));
+    CHECK(DistanceTo(zone, Vector3(0, 100, 100)) == Approx(a));
+    CHECK(DistanceTo(zone, Vector3(-70.71f, 70.71f, 100)) == Approx(a).margin(0.01f));
+}
+
+TEST_CASE("a cone follows the actor's forward axis", "[spatial-math][zone-cone]")
+{
+    const Quaternion rotation = Quaternion::Euler(20, 70, 10);
+    const Vector3 apex(500, 100, -300);
+    const ZoneShape zone = ZoneShape::MakeCone(apex, rotation, 100.0f, 200.0f);
+    const Vector3 axis = rotation * Vector3::Forward;
+
+    CHECK(DistanceTo(zone, apex + axis * 150.0f) == Approx(0.0f));
+    CHECK(DistanceTo(zone, apex - axis * 30.0f) == Approx(30.0f));
+    CHECK(DistanceTo(zone, apex + axis * 250.0f) == Approx(50.0f).margin(0.01f));
+}
+
+TEST_CASE("a cone zone blends linearly outside", "[spatial-math][zone-cone]")
+{
+    const ZoneShape zone = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 100.0f, 200.0f);
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(0, 0, 100)) == Approx(1.0f));
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(0, 0, 250)) == Approx(0.5f));
+    CHECK(EnvironmentFactor(zone, 100.0f, Vector3(0, 0, -150)) == Approx(0.0f));
+}
+
+TEST_CASE("degenerate cones do not divide by zero", "[spatial-math][zone-cone]")
+{
+    const ZoneShape flat = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 100.0f, 0.0f);
+    CHECK(std::isfinite(DistanceTo(flat, Vector3(10, 10, 10))));
+
+    const ZoneShape thin = ZoneShape::MakeCone(Vector3::Zero, Quaternion::Identity, 0.0f, 200.0f);
+    CHECK(DistanceTo(thin, Vector3(0, 0, 100)) == Approx(0.0f));
+    CHECK(DistanceTo(thin, Vector3(30, 0, 100)) == Approx(30.0f));
+}

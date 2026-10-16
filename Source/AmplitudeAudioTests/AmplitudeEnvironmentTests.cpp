@@ -198,3 +198,50 @@ TEST_CASE("an entity beside a capsule environment receives its factor", "[enviro
     entity->DeleteObjectNow();
     environment->DeleteObjectNow();
 }
+
+TEST_CASE("a cone environment describes its zone", "[environment][zone-cone]")
+{
+    auto* environment = ScriptingObject::NewObject<AmplitudeEnvironment>();
+    environment->SetPosition(Vector3(5, 6, 7));
+    environment->Shape = AmplitudeEnvironmentShape::Cone;
+    environment->Radius = 100.0f;
+    environment->Height = 300.0f;
+
+    const auto zone = environment->MakeZone();
+    CHECK(zone.Kind == AmplitudeAudio::Spatial::ZoneKind::Cone);
+    CHECK(zone.Center == Vector3(5, 6, 7));
+    CHECK(zone.Extents.X == Approx(100.0f));
+    CHECK(zone.Extents.Y == Approx(300.0f));
+    environment->DeleteObjectNow();
+}
+
+TEST_CASE("an entity inside a cone environment receives its factor", "[environment][zone-cone]")
+{
+    String root, buildPath;
+    REQUIRE_TEST_PROJECT(root, buildPath);
+    ServiceGuard guard;
+    REQUIRE(AmplitudeService::Get().Startup(MakeProfile(TEXT("pc.config.amconfig")), root, buildPath));
+
+    auto* environment = ScriptingObject::NewObject<AmplitudeEnvironment>();
+    environment->Shape = AmplitudeEnvironmentShape::Cone;
+    environment->Radius = 100.0f;
+    environment->Height = 200.0f;
+    environment->BlendDistance = 100.0f;
+    environment->OnBeginPlay();
+    const auto id = static_cast<SparkyStudios::Audio::Amplitude::AmEnvironmentID>(environment->GetEnvironmentId());
+    auto* entity = ScriptingObject::NewObject<AmplitudeEntity>();
+    entity->SetPosition(Vector3(0, 0, 100)); // on the axis, forward of the apex
+    entity->OnBeginPlay();
+
+    AmplitudeService::Get().Tick();
+    CHECK(entity->GetHandle().GetEnvironmentFactor(id) == Approx(1.0f));
+
+    entity->SetPosition(Vector3(0, 0, -50)); // behind the apex, halfway through the blend
+    AmplitudeService::Get().Tick();
+    CHECK(entity->GetHandle().GetEnvironmentFactor(id) == Approx(0.5f));
+
+    entity->OnEndPlay();
+    environment->OnEndPlay();
+    entity->DeleteObjectNow();
+    environment->DeleteObjectNow();
+}

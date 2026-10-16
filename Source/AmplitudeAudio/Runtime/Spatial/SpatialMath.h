@@ -51,6 +51,7 @@ namespace AmplitudeAudio::Spatial
         static ZoneShape MakeBox(const Vector3& center, const Quaternion& rotation, const Vector3& halfExtents);
         static ZoneShape MakeSphere(const Vector3& center, float radius);
         static ZoneShape MakeCapsule(const Vector3& center, const Quaternion& rotation, float radius, float halfHeight);
+        static ZoneShape MakeCone(const Vector3& apex, const Quaternion& rotation, float baseRadius, float height);
     };
 
     /// <summary>Returns the rotation to draw a wire capsule whose axis aligns with the actor's local Y axis.</summary>
