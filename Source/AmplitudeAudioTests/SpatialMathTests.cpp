@@ -96,3 +96,22 @@ TEST_CASE("equal volumes keep the earlier room", "[spatial-math]")
     CHECK(PickRoom(rooms, 2, Vector3::Zero) == 7);
     CHECK(PickRoom(nullptr, 0, Vector3::Zero) == 0);
 }
+
+TEST_CASE("a box zone matches the oriented box math", "[spatial-math]")
+{
+    const OrientedBox box = Box(Vector3(100, 0, 0), Vector3(50, 50, 50));
+    const ZoneShape zone = ZoneShape::MakeBox(box.Center, box.Rotation, box.HalfExtents);
+
+    for (const Vector3& p : {Vector3(100, 0, 0), Vector3(180, 0, 0), Vector3(100, 90, 0), Vector3(400, 0, 0)})
+    {
+        CHECK(DistanceTo(zone, p) == Approx(DistanceTo(box, p)));
+        CHECK(EnvironmentFactor(zone, 100.0f, p) == Approx(EnvironmentFactor(box, 100.0f, p)));
+    }
+}
+
+TEST_CASE("the zone kind decides which extents matter", "[spatial-math]")
+{
+    const ZoneShape box = ZoneShape::MakeBox(Vector3::Zero, Quaternion::Identity, Vector3(10, 20, 30));
+    CHECK(box.Kind == ZoneKind::Box);
+    CHECK(box.Extents == Vector3(10, 20, 30));
+}

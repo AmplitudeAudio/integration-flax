@@ -96,3 +96,17 @@ TEST_CASE("a destroyed environment zeroes the factor", "[environment]")
     entity->DeleteObjectNow();
     environment->DeleteObjectNow();
 }
+
+TEST_CASE("an environment is a box by default and describes its zone", "[environment]")
+{
+    auto* environment = ScriptingObject::NewObject<AmplitudeEnvironment>();
+    environment->SetPosition(Vector3(10, 20, 30));
+    environment->Size = Vector3(400, 300, 400);
+
+    CHECK(environment->Shape == AmplitudeEnvironmentShape::Box);
+    const auto zone = environment->MakeZone();
+    CHECK(zone.Kind == AmplitudeAudio::Spatial::ZoneKind::Box);
+    CHECK(zone.Center == Vector3(10, 20, 30));
+    CHECK(zone.Extents == Vector3(200, 150, 200));
+    environment->DeleteObjectNow();
+}

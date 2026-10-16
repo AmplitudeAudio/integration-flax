@@ -22,6 +22,7 @@
 #include <Engine/Core/Math/OrientedBoundingBox.h>
 #include <Engine/Serialization/Serialization.h>
 
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Math/Shape.h>
 
 #include <AmplitudeAudio/Core/Helpers.h>
@@ -29,6 +30,7 @@
 
 using AmplitudeAudio::AmplitudeService;
 using AmplitudeAudio::EnvironmentCandidate;
+using SparkyStudios::Audio::Amplitude::AmSharedPtr;
 
 AmplitudeEnvironment::AmplitudeEnvironment(const SpawnParams& params)
     : Actor(params)
@@ -125,9 +127,9 @@ void AmplitudeEnvironment::PushState() const
     const SparkyStudios::Audio::Amplitude::AmVector3 innerExtents = AmplitudeAudio::ToAmDimensions(Size * 0.5f);
     const SparkyStudios::Audio::Amplitude::AmVector3 outerExtents = AmplitudeAudio::ToAmDimensions(Size * 0.5f + Vector3(BlendDistance));
 
-    auto inner = std::make_shared<SparkyStudios::Audio::Amplitude::BoxShape>(innerExtents[0], innerExtents[1], innerExtents[2]);
-    auto outer = std::make_shared<SparkyStudios::Audio::Amplitude::BoxShape>(outerExtents[0], outerExtents[1], outerExtents[2]);
-    auto zone = std::make_shared<SparkyStudios::Audio::Amplitude::BoxZone>(inner, outer);
+    auto inner = amshared(SparkyStudios::Audio::Amplitude::BoxShape, innerExtents[0], innerExtents[1], innerExtents[2]);
+    auto outer = amshared(SparkyStudios::Audio::Amplitude::BoxShape, outerExtents[0], outerExtents[1], outerExtents[2]);
+    auto zone = amshared(SparkyStudios::Audio::Amplitude::BoxZone, inner, outer);
 
     _environment.SetZone(zone);
     _environment.SetLocation(AmplitudeAudio::FlaxVec3ToAmVec3(GetPosition()));
@@ -137,13 +139,14 @@ void AmplitudeEnvironment::PushState() const
         _environment.SetEffect(static_cast<SparkyStudios::Audio::Amplitude::AmEffectID>(Effect.ID));
 }
 
+AmplitudeAudio::Spatial::ZoneShape AmplitudeEnvironment::MakeZone() const
+{
+    return AmplitudeAudio::Spatial::ZoneShape::MakeBox(GetPosition(), GetOrientation(), Size * 0.5f);
+}
+
 EnvironmentCandidate AmplitudeEnvironment::MakeCandidate() const
 {
-    AmplitudeAudio::Spatial::OrientedBox box;
-    box.Center = GetPosition();
-    box.Rotation = GetOrientation();
-    box.HalfExtents = Size * 0.5f;
-    return { _id, box, BlendDistance };
+    return { _id, MakeZone(), BlendDistance };
 }
 
 #if USE_EDITOR
@@ -170,6 +173,7 @@ void AmplitudeEnvironment::Serialize(SerializeStream& stream, const void* otherO
 {
     Actor::Serialize(stream, otherObj);
     SERIALIZE_GET_OTHER_OBJ(AmplitudeEnvironment);
+    SERIALIZE(Shape);
     SERIALIZE(Size);
     SERIALIZE(BlendDistance);
     SERIALIZE(Effect);
@@ -178,6 +182,7 @@ void AmplitudeEnvironment::Serialize(SerializeStream& stream, const void* otherO
 void AmplitudeEnvironment::Deserialize(DeserializeStream& stream, ISerializeModifier* modifier)
 {
     Actor::Deserialize(stream, modifier);
+    DESERIALIZE(Shape);
     DESERIALIZE(Size);
     DESERIALIZE(BlendDistance);
     DESERIALIZE(Effect);

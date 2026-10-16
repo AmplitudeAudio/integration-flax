@@ -23,6 +23,7 @@ using AmplitudeAudio::EnvironmentCandidate;
 using AmplitudeAudio::ISpatialTarget;
 using AmplitudeAudio::Spatial::OrientedBox;
 using AmplitudeAudio::Spatial::RoomCandidate;
+using AmplitudeAudio::Spatial::ZoneShape;
 
 namespace
 {
@@ -45,6 +46,11 @@ namespace
         box.Center = center;
         box.HalfExtents = Vector3(half);
         return box;
+    }
+
+    ZoneShape Zone(Vector3 center, float half)
+    {
+        return ZoneShape::MakeBox(center, Quaternion::Identity, Vector3(half));
     }
 
     Array<RoomCandidate> Rooms(std::initializer_list<RoomCandidate> list)
@@ -93,7 +99,7 @@ TEST_CASE("environment factors follow the target", "[spatial-processor]")
     AmplitudeSpatialProcessor processor;
     FakeTarget target;
     processor.AddTarget(&target);
-    processor.SetWorld(Rooms({}), Envs({{9, Box(Vector3::Zero, 100), 100.0f}}));
+    processor.SetWorld(Rooms({}), Envs({{9, Zone(Vector3::Zero, 100), 100.0f}}));
 
     processor.Update(true, true);
     CHECK(target.Factors[9] == Approx(1.0f));
@@ -108,7 +114,7 @@ TEST_CASE("an idle target costs nothing", "[spatial-processor]")
     AmplitudeSpatialProcessor processor;
     FakeTarget target;
     processor.AddTarget(&target);
-    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({{9, Box(Vector3::Zero, 100), 0.0f}}));
+    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({{9, Zone(Vector3::Zero, 100), 0.0f}}));
     processor.Update(true, true);
 
     const int roomWrites = target.RoomWrites;
@@ -144,7 +150,7 @@ TEST_CASE("a removed environment is zeroed once", "[spatial-processor]")
     AmplitudeSpatialProcessor processor;
     FakeTarget target;
     processor.AddTarget(&target);
-    processor.SetWorld(Rooms({}), Envs({{9, Box(Vector3::Zero, 100), 0.0f}}));
+    processor.SetWorld(Rooms({}), Envs({{9, Zone(Vector3::Zero, 100), 0.0f}}));
     processor.Update(true, true);
     REQUIRE(target.Factors[9] == Approx(1.0f));
 
@@ -163,7 +169,7 @@ TEST_CASE("a disabled part applies nothing and applies later when enabled", "[sp
     AmplitudeSpatialProcessor processor;
     FakeTarget target;
     processor.AddTarget(&target);
-    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({{9, Box(Vector3::Zero, 100), 0.0f}}));
+    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({{9, Zone(Vector3::Zero, 100), 0.0f}}));
 
     processor.Update(false, false);
     CHECK(target.RoomWrites == 0);

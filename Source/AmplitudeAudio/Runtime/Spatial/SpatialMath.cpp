@@ -18,6 +18,16 @@
 
 namespace AmplitudeAudio::Spatial
 {
+    ZoneShape ZoneShape::MakeBox(const Vector3& center, const Quaternion& rotation, const Vector3& halfExtents)
+    {
+        ZoneShape zone;
+        zone.Kind = ZoneKind::Box;
+        zone.Center = center;
+        zone.Rotation = rotation;
+        zone.Extents = halfExtents;
+        return zone;
+    }
+
     bool Contains(const OrientedBox& box, const Vector3& point)
     {
         const Vector3 local = Quaternion::Invert(box.Rotation) * (point - box.Center);
@@ -33,9 +43,25 @@ namespace AmplitudeAudio::Spatial
         return outside.Length();
     }
 
+    float DistanceTo(const ZoneShape& zone, const Vector3& point)
+    {
+        switch (zone.Kind)
+        {
+        case ZoneKind::Box:
+            return DistanceTo(OrientedBox{ zone.Center, zone.Rotation, zone.Extents }, point);
+        default:
+            return 0.0f;
+        }
+    }
+
     float EnvironmentFactor(const OrientedBox& box, float blendDistance, const Vector3& point)
     {
-        const float distance = DistanceTo(box, point);
+        return EnvironmentFactor(ZoneShape::MakeBox(box.Center, box.Rotation, box.HalfExtents), blendDistance, point);
+    }
+
+    float EnvironmentFactor(const ZoneShape& zone, float blendDistance, const Vector3& point)
+    {
+        const float distance = DistanceTo(zone, point);
         if (distance <= 0.0f)
             return 1.0f;
         if (blendDistance <= 0.0f)

@@ -24,6 +24,16 @@
 #include <AmplitudeAudio/Runtime/Spatial/AmplitudeSpatialProcessor.h>
 #include <AmplitudeAudio/Types/AmplitudeRefs.h>
 
+/// <summary>Environment zone shape kind.</summary>
+API_ENUM(Namespace = "AmplitudeAudio")
+enum class AmplitudeEnvironmentShape
+{
+    Box = 0,
+    Sphere = 1,
+    Capsule = 2,
+    Cone = 3,
+};
+
 /// <summary>An Amplitude environment actor defining a regional zone effect and blend distance.</summary>
 API_CLASS(Namespace = "AmplitudeAudio", Attributes = "ActorContextMenu(\"New/Amplitude/Environment\"), ActorToolbox(\"Other\")")
 class AMPLITUDEAUDIO_API AmplitudeEnvironment : public Actor, public AmplitudeAudio::IAmplitudeServiceClient
@@ -31,16 +41,20 @@ class AMPLITUDEAUDIO_API AmplitudeEnvironment : public Actor, public AmplitudeAu
     DECLARE_SCENE_OBJECT(AmplitudeEnvironment);
 
 public:
-    /// <summary>Dimensions of the environment zone box in world units.</summary>
+    /// <summary>Zone shape kind.</summary>
     API_FIELD(Attributes = "EditorOrder(0)")
+    AmplitudeEnvironmentShape Shape = AmplitudeEnvironmentShape::Box;
+
+    /// <summary>Dimensions of the environment zone box in world units.</summary>
+    API_FIELD(Attributes = "EditorOrder(1)")
     Vector3 Size = Vector3(400.0f, 300.0f, 400.0f);
 
     /// <summary>Distance outside the zone over which the effect fades linearly to zero.</summary>
-    API_FIELD(Attributes = "EditorOrder(1), Limit(0)")
+    API_FIELD(Attributes = "EditorOrder(2), Limit(0)")
     float BlendDistance = 100.0f;
 
     /// <summary>Environment effect applied within this zone.</summary>
-    API_FIELD(Attributes = "EditorOrder(2)")
+    API_FIELD(Attributes = "EditorOrder(3)")
     AmplitudeEnvironmentEffectRef Effect;
 
     /// <summary>Whether the SDK environment handle is valid.</summary>
@@ -53,6 +67,23 @@ public:
 
     /// <summary>Returns the SDK environment handle.</summary>
     const SparkyStudios::Audio::Amplitude::Environment& GetHandle() const { return _environment; }
+
+    API_PROPERTY(Attributes = "HideInEditor")
+    bool IsBox() const { return Shape == AmplitudeEnvironmentShape::Box; }
+
+    API_PROPERTY(Attributes = "HideInEditor")
+    bool IsSphere() const { return Shape == AmplitudeEnvironmentShape::Sphere; }
+
+    API_PROPERTY(Attributes = "HideInEditor")
+    bool IsCapsule() const { return Shape == AmplitudeEnvironmentShape::Capsule; }
+
+    API_PROPERTY(Attributes = "HideInEditor")
+    bool IsCone() const { return Shape == AmplitudeEnvironmentShape::Cone; }
+
+    API_PROPERTY(Attributes = "HideInEditor")
+    bool UsesRadius() const { return Shape != AmplitudeEnvironmentShape::Box; }
+
+    AmplitudeAudio::Spatial::ZoneShape MakeZone() const;
 
     void OnEngineStarted() override;
     void OnEngineStopping() override;

@@ -95,7 +95,7 @@ namespace AmplitudeAudio
             {
                 for (const EnvironmentCandidate& env : m_environments)
                 {
-                    const float factor = Spatial::EnvironmentFactor(env.Box, env.BlendDistance, currentLocation);
+                    const float factor = Spatial::EnvironmentFactor(env.Zone, env.BlendDistance, currentLocation);
                     float applied = 0.0f;
                     if (state.AppliedFactors.TryGet(env.Id, applied))
                     {

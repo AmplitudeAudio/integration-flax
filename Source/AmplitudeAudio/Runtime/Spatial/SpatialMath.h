@@ -21,6 +21,14 @@
 
 namespace AmplitudeAudio::Spatial
 {
+    enum class ZoneKind : uint8
+    {
+        Box = 0,
+        Sphere = 1,
+        Capsule = 2,
+        Cone = 3,
+    };
+
     struct OrientedBox
     {
         Vector3 Center = Vector3::Zero;
@@ -30,14 +38,33 @@ namespace AmplitudeAudio::Spatial
         float Volume() const { return 8.0f * HalfExtents.X * HalfExtents.Y * HalfExtents.Z; }
     };
 
+    /// <summary>An environment zone in world space. The meaning of Extents depends on Kind.</summary>
+    struct AMPLITUDEAUDIO_API ZoneShape
+    {
+        ZoneKind Kind = ZoneKind::Box;
+        Vector3 Center = Vector3::Zero;            // Box, Sphere, Capsule: the center. Cone: the apex.
+        Quaternion Rotation = Quaternion::Identity;
+        Vector3 Extents = Vector3::Zero;           // Box: half extents. Sphere: X = radius.
+                                                   // Capsule: X = radius, Y = half height (caps included).
+                                                   // Cone: X = base radius, Y = height.
+
+        static ZoneShape MakeBox(const Vector3& center, const Quaternion& rotation, const Vector3& halfExtents);
+    };
+
     /// <summary>Whether the point is inside or on the surface of the box.</summary>
     AMPLITUDEAUDIO_API bool Contains(const OrientedBox& box, const Vector3& point);
 
     /// <summary>Distance from the point to the box surface; 0 inside.</summary>
     AMPLITUDEAUDIO_API float DistanceTo(const OrientedBox& box, const Vector3& point);
 
+    /// <summary>Distance from the point to the zone; 0 inside.</summary>
+    AMPLITUDEAUDIO_API float DistanceTo(const ZoneShape& zone, const Vector3& point);
+
     /// <summary>1 inside, falling linearly to 0 at blendDistance outside the surface. A blendDistance of 0 is a hard edge.</summary>
     AMPLITUDEAUDIO_API float EnvironmentFactor(const OrientedBox& box, float blendDistance, const Vector3& point);
+
+    /// <summary>1 inside, falling linearly to 0 at blendDistance outside the surface. A blendDistance of 0 is a hard edge.</summary>
+    AMPLITUDEAUDIO_API float EnvironmentFactor(const ZoneShape& zone, float blendDistance, const Vector3& point);
 
     struct RoomCandidate
     {

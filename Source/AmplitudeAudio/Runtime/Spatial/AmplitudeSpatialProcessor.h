@@ -28,7 +28,7 @@ namespace AmplitudeAudio
     struct EnvironmentCandidate
     {
         uint64 Id = 0;
-        Spatial::OrientedBox Box;
+        Spatial::ZoneShape Zone;
         float BlendDistance = 0.0f;
     };
 
