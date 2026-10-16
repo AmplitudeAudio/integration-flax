@@ -32,6 +32,13 @@ namespace AmplitudeAudio
         return CartesianCoordinateSystem::ConvertToDefault(result, flax);
     }
 
+    AmVector3 ToAmDimensions(const Vector3& dimensions)
+    {
+        const AmVector3 mapped = FlaxVec3ToAmVec3(dimensions);
+        const AmVector3 result = { static_cast<AmReal32>(Math::Abs(mapped[0])), static_cast<AmReal32>(Math::Abs(mapped[1])), static_cast<AmReal32>(Math::Abs(mapped[2])) };
+        return result;
+    }
+
     std::string FlaxStringToStdString(const ::String& value)
     {
         const ::StringAnsi ansi = value.ToStringAnsi();
@@ -68,9 +75,8 @@ namespace AmplitudeAudio
 
         // Convert from Amplitude default (Z-up) to Flax (Y-up)
         AmVector3 result = CartesianCoordinateSystem::Convert(vec, CartesianCoordinateSystem::Default(), flax);
-        const float scale = 1.0f / UNITS_TO_METERS_SCALE;
-        return Vector3(static_cast<float>(result[0]) * scale,
-            static_cast<float>(result[1]) * scale,
-            static_cast<float>(result[2]) * scale);
+        return Vector3(static_cast<float>(result[0]) * METERS_TO_UNITS_SCALE,
+                       static_cast<float>(result[1]) * METERS_TO_UNITS_SCALE,
+                       static_cast<float>(result[2]) * METERS_TO_UNITS_SCALE);
     }
 } // namespace AmplitudeAudio

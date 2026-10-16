@@ -23,6 +23,8 @@
 #include <AmplitudeAudio/Runtime/AmplitudeService.h>
 #include <AmplitudeAudio/Scripts/IAmplitudeEmitter.h>
 
+#include "Engine/Core/Log.h"
+
 using AmplitudeAudio::AmplitudeService;
 using SparkyStudios::Audio::Amplitude::Entity;
 
@@ -61,6 +63,7 @@ void AmplitudeEntity::OnEngineStarted()
         AmplitudeService::Get().AllocateId()));
     PushState();
     AmplitudeService::Get().GetOcclusion().AddSource(this);
+    AmplitudeService::Get().GetSpatial().AddTarget(this);
 }
 
 void AmplitudeEntity::OnEngineStopping()
@@ -69,6 +72,7 @@ void AmplitudeEntity::OnEngineStopping()
     if (!_entity.Valid())
         return;
 
+    AmplitudeService::Get().GetSpatial().RemoveTarget(this);
     AmplitudeService::Get().GetOcclusion().RemoveSource(this);
     ApplyOcclusion(0.0f, 0.0f);
     if (auto* engine = AmplitudeService::Get().GetEngine())
@@ -93,10 +97,30 @@ Vector3 AmplitudeEntity::GetOcclusionLocation() const
 
 void AmplitudeEntity::ApplyOcclusion(float obstruction, float occlusion)
 {
+    LOG(Info, "Applying occlusion: obstruction={}, occlusion={}", obstruction, occlusion);
     if (!_entity.Valid())
         return;
     _entity.SetObstruction(obstruction);
     _entity.SetOcclusion(occlusion);
+}
+
+Vector3 AmplitudeEntity::GetSpatialLocation() const
+{
+    return GetPosition();
+}
+
+void AmplitudeEntity::ApplyRoom(uint64 roomId)
+{
+    if (!_entity.Valid())
+        return;
+    _entity.SetRoom(roomId ? AmplitudeService::Get().FindRoom(roomId) : SparkyStudios::Audio::Amplitude::Room());
+}
+
+void AmplitudeEntity::ApplyEnvironmentFactor(uint64 environmentId, float factor)
+{
+    if (!_entity.Valid())
+        return;
+    _entity.SetEnvironmentFactor(static_cast<SparkyStudios::Audio::Amplitude::AmEnvironmentID>(environmentId), factor);
 }
 
 void AmplitudeEntity::Register()

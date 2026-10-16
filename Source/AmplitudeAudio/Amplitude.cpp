@@ -227,3 +227,9 @@ void Amplitude::StopAll()
         return;
     engine->StopAll();
 }
+
+AmplitudeObstructionSettings Amplitude::GetDefaultObstructionSettings()
+{
+    return AmplitudeObstructionSettings();
+}
+

@@ -252,6 +252,9 @@ namespace AmplitudeAudio
         m_appPaused = false;
         m_paused    = false;
         m_startupWarnings.Clear();
+        m_rooms.Clear();
+        m_environments.Clear();
+        m_spatialDirty = true;
 
         if (wasRunning)
             LOG(Info, "[Amplitude] Engine stopped.");
@@ -286,6 +289,11 @@ namespace AmplitudeAudio
             m_surfaces.Build(obstruction);
             m_surfacesDirty = false;
         }
+
+        if (m_spatialDirty)
+            RebuildSpatialWorld();
+
+        m_spatial.Update(m_engine->IsGameTrackingRooms(), m_engine->IsGameTrackingEnvironmentAmounts());
 
         const auto listener = m_engine->GetDefaultListener();
         if (listener.Valid() && m_occlusion.GetSourceCount() > 0)
@@ -402,6 +410,68 @@ namespace AmplitudeAudio
     {
         ScopeLock lock(m_postLock);
         m_posted.Add(MoveTemp(work));
+    }
+
+    void AmplitudeService::RebuildSpatialWorld()
+    {
+        Array<Spatial::RoomCandidate> rooms;
+        rooms.EnsureCapacity(m_rooms.Count());
+        for (auto it = m_rooms.Begin(); it != m_rooms.End(); ++it)
+            rooms.Add(it->Value.Candidate);
+
+        Array<EnvironmentCandidate> envs;
+        envs.EnsureCapacity(m_environments.Count());
+        for (auto it = m_environments.Begin(); it != m_environments.End(); ++it)
+            envs.Add(it->Value);
+
+        m_spatial.SetWorld(rooms, envs);
+        m_spatialDirty = false;
+    }
+
+    void AmplitudeService::RegisterRoom(uint64 id, const Room& handle, const Spatial::RoomCandidate& candidate)
+    {
+        m_rooms[id] = { handle, candidate };
+        m_spatialDirty = true;
+    }
+
+    void AmplitudeService::UpdateRoom(uint64 id, const Spatial::RoomCandidate& candidate)
+    {
+        RoomEntry* entry = m_rooms.TryGet(id);
+        if (entry)
+        {
+            entry->Candidate = candidate;
+            m_spatialDirty = true;
+        }
+    }
+
+    void AmplitudeService::UnregisterRoom(uint64 id)
+    {
+        m_rooms.Remove(id);
+        m_spatialDirty = true;
+    }
+
+    void AmplitudeService::RegisterEnvironment(const EnvironmentCandidate& candidate)
+    {
+        m_environments[candidate.Id] = candidate;
+        m_spatialDirty = true;
+    }
+
+    void AmplitudeService::UpdateEnvironment(const EnvironmentCandidate& candidate)
+    {
+        m_environments[candidate.Id] = candidate;
+        m_spatialDirty = true;
+    }
+
+    void AmplitudeService::UnregisterEnvironment(uint64 id)
+    {
+        m_environments.Remove(id);
+        m_spatialDirty = true;
+    }
+
+    Room AmplitudeService::FindRoom(uint64 id) const
+    {
+        const RoomEntry* entry = m_rooms.TryGet(id);
+        return entry ? entry->Handle : Room();
     }
 
     void AmplitudeService::OnEngineUpdate()

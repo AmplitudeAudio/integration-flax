@@ -22,12 +22,13 @@
 
 #include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
 #include <AmplitudeAudio/Runtime/Occlusion/IOcclusionSource.h>
+#include <AmplitudeAudio/Runtime/Spatial/ISpatialTarget.h>
 
 class IAmplitudeEmitter;
 
 /// <summary>An Amplitude entity. Usually attached to a character or object that emits sound.</summary>
 API_CLASS(Namespace = "AmplitudeAudio", Attributes = "ActorContextMenu(\"New/Amplitude/Entity\"), ActorToolbox(\"Other\")")
-class AMPLITUDEAUDIO_API AmplitudeEntity : public Actor, public AmplitudeAudio::IAmplitudeServiceClient, public AmplitudeAudio::IOcclusionSource
+class AMPLITUDEAUDIO_API AmplitudeEntity : public Actor, public AmplitudeAudio::IAmplitudeServiceClient, public AmplitudeAudio::IOcclusionSource, public AmplitudeAudio::ISpatialTarget
 {
     DECLARE_SCENE_OBJECT(AmplitudeEntity);
 
@@ -73,6 +74,11 @@ public:
     bool IsOcclusionActive() const override;
     Vector3 GetOcclusionLocation() const override;
     void ApplyOcclusion(float obstruction, float occlusion) override;
+
+    // ISpatialTarget
+    Vector3 GetSpatialLocation() const override;
+    void ApplyRoom(uint64 roomId) override;
+    void ApplyEnvironmentFactor(uint64 environmentId, float factor) override;
 
     // Actor
     void OnBeginPlay() override;

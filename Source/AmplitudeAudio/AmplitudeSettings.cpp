@@ -31,3 +31,63 @@ AmplitudePlatformProfile AmplitudeSettings::GetProfile(PlatformType platform) co
 
     return DefaultProfile;
 }
+
+void AmplitudeObstructionSettings::Serialize(SerializeStream& stream, const void* otherObj)
+{
+    SERIALIZE_GET_OTHER_OBJ(AmplitudeObstructionSettings);
+    SERIALIZE(DefaultAmount);
+    SERIALIZE(MaterialAmounts);
+    SERIALIZE(TagAmounts);
+    SERIALIZE(MaxDistance);
+    SERIALIZE(FullObstructionDistance);
+    SERIALIZE(RayBudgetPerFrame);
+    SERIALIZE(IndirectRayCount);
+    SERIALIZE(IndirectRadius);
+    SERIALIZE(RandomSeed);
+    SERIALIZE(AttackSmoothing);
+    SERIALIZE(ReleaseSmoothing);
+    SERIALIZE(DebugDraw);
+
+    if (!other || Layers.Mask != other->Layers.Mask)
+    {
+        stream.JKEY("Layers");
+        stream.StartObject();
+        stream.JKEY("Mask");
+        stream.Uint(Layers.Mask);
+        stream.EndObject();
+    }
+}
+
+void AmplitudeObstructionSettings::Deserialize(DeserializeStream& stream, ISerializeModifier* modifier)
+{
+    DESERIALIZE(DefaultAmount);
+    DESERIALIZE(MaterialAmounts);
+    DESERIALIZE(TagAmounts);
+    DESERIALIZE(MaxDistance);
+    DESERIALIZE(FullObstructionDistance);
+    DESERIALIZE(RayBudgetPerFrame);
+    DESERIALIZE(IndirectRayCount);
+    DESERIALIZE(IndirectRadius);
+    DESERIALIZE(RandomSeed);
+    DESERIALIZE(AttackSmoothing);
+    DESERIALIZE(ReleaseSmoothing);
+    DESERIALIZE(DebugDraw);
+
+    // Accepts the C# form {"Mask": n} and the native bare number; anything else keeps the default.
+    const auto layers = SERIALIZE_FIND_MEMBER(stream, "Layers");
+    if (layers != stream.MemberEnd())
+    {
+        const auto& value = layers->value;
+        if (value.IsUint())
+        {
+            Layers.Mask = value.GetUint();
+        }
+        else if (value.IsObject())
+        {
+            const auto mask = value.FindMember("Mask");
+            if (mask != value.MemberEnd() && mask->value.IsUint())
+                Layers.Mask = mask->value.GetUint();
+        }
+    }
+}
+

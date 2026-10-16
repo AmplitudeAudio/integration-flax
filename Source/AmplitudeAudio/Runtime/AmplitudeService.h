@@ -33,6 +33,7 @@
 #include <AmplitudeAudio/Runtime/IAmplitudeServiceClient.h>
 #include <AmplitudeAudio/Runtime/Occlusion/AmplitudeOcclusionProcessor.h>
 #include <AmplitudeAudio/Runtime/Occlusion/ObstructionSurfaces.h>
+#include <AmplitudeAudio/Runtime/Spatial/AmplitudeSpatialProcessor.h>
 
 struct AmplitudePlatformProfile;
 
@@ -94,6 +95,33 @@ namespace AmplitudeAudio
         /// <summary>Returns the occlusion processor.</summary>
         [[nodiscard]] AmplitudeOcclusionProcessor& GetOcclusion() { return m_occlusion; }
 
+        /// <summary>Returns the spatial processor.</summary>
+        [[nodiscard]] AmplitudeSpatialProcessor& GetSpatial() { return m_spatial; }
+
+        /// <summary>Registers an active room.</summary>
+        void RegisterRoom(uint64 id, const SparkyStudios::Audio::Amplitude::Room& handle, const Spatial::RoomCandidate& candidate);
+
+        /// <summary>Updates an active room's spatial descriptor.</summary>
+        void UpdateRoom(uint64 id, const Spatial::RoomCandidate& candidate);
+
+        /// <summary>Unregisters a room.</summary>
+        void UnregisterRoom(uint64 id);
+
+        /// <summary>Registers an active environment.</summary>
+        void RegisterEnvironment(const EnvironmentCandidate& candidate);
+
+        /// <summary>Updates an active environment's spatial descriptor.</summary>
+        void UpdateEnvironment(const EnvironmentCandidate& candidate);
+
+        /// <summary>Unregisters an environment.</summary>
+        void UnregisterEnvironment(uint64 id);
+
+        /// <summary>Finds a registered room handle by ID, or returns an invalid handle if not found.</summary>
+        [[nodiscard]] SparkyStudios::Audio::Amplitude::Room FindRoom(uint64 id) const;
+
+        /// <summary>Marks the spatial world dirty so it rebuilds on the next Tick.</summary>
+        void MarkSpatialDirty() { m_spatialDirty = true; }
+
         /// <summary>Allocates a unique, non-reusable ID for scene objects (listener, entity, etc.).</summary>
         [[nodiscard]] SparkyStudios::Audio::Amplitude::AmObjectID AllocateId();
 
@@ -116,15 +144,27 @@ namespace AmplitudeAudio
         void ApplyPause();
         bool Fail(const ::String& message);
 
+        struct RoomEntry
+        {
+            SparkyStudios::Audio::Amplitude::Room Handle;
+            Spatial::RoomCandidate Candidate;
+        };
+
+        void RebuildSpatialWorld();
+
         SparkyStudios::Audio::Amplitude::Engine* m_engine = nullptr;
         std::shared_ptr<SparkyStudios::Audio::Amplitude::FileSystem> m_fileSystem;
         std::vector<SparkyStudios::Audio::Amplitude::AmOsString> m_pluginSearchPaths;
         BankRegistry m_banks;
         AmplitudeOcclusionProcessor m_occlusion;
         ObstructionSurfaces m_surfaces;
+        Dictionary<uint64, RoomEntry> m_rooms;
+        Dictionary<uint64, EnvironmentCandidate> m_environments;
+        AmplitudeSpatialProcessor m_spatial;
         Array<::String> m_startupWarnings;
         bool m_running = false;
         bool m_surfacesDirty = true;
+        bool m_spatialDirty = true;
         bool m_ownsMemoryManager = false;
         bool m_usingPackage = false;
         bool m_extensionsRegistered = false;

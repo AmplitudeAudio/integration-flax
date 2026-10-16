@@ -16,6 +16,7 @@
 
 #include <Engine/Scripting/ScriptingType.h>
 
+#include <AmplitudeAudio/AmplitudeSettings.h>
 #include <AmplitudeAudio/Types/AmplitudeSoundBankRef.h>
 #include <AmplitudeAudio/Types/AmplitudeRefs.h>
 #include <AmplitudeAudio/Types/AmplitudeChannel.h>
@@ -37,6 +38,10 @@ public:
     /// <summary>Stops the engine and unloads every sound bank.</summary>
     API_FUNCTION()
     static void Shutdown();
+
+    /// <summary>Obstruction settings with the plugin's default values. A C# <c>new AmplitudeObstructionSettings()</c> is all zeros.</summary>
+    API_FUNCTION()
+    static AmplitudeObstructionSettings GetDefaultObstructionSettings();
 
     /// <summary>Whether the engine is running.</summary>
     API_PROPERTY()

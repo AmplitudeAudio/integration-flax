@@ -127,7 +127,11 @@ API_STRUCT(Namespace = "AmplitudeAudio")
 struct AMPLITUDEAUDIO_API AmplitudeObstructionSettings : public ISerializable
 {
     DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeObstructionSettings);
-    API_AUTO_SERIALIZATION();
+
+    // Written by hand: the editor saves this asset from C#, which serializes LayersMask as {"Mask": n}
+    // while Flax's native LayersMask only reads a bare number.
+    void Serialize(SerializeStream& stream, const void* otherObj) override;
+    void Deserialize(DeserializeStream& stream, ISerializeModifier* modifier) override;
 
     /// <summary>Default obstruction amount when a surface has no material or tag rule.</summary>
     API_FIELD(Attributes = "EditorOrder(0), Limit(0, 1, 0.01f)")

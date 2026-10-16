@@ -161,3 +161,21 @@ struct AMPLITUDEAUDIO_API AmplitudeSwitchStateRef : public ISerializable
         return ID != 0;
     }
 };
+
+/// <summary>References an environment effect by its Amplitude ID.</summary>
+API_STRUCT(Namespace = "AmplitudeAudio")
+struct AMPLITUDEAUDIO_API AmplitudeEnvironmentEffectRef : public ISerializable
+{
+    DECLARE_SCRIPTING_TYPE_MINIMAL(AmplitudeEnvironmentEffectRef);
+    API_AUTO_SERIALIZATION();
+
+    /// <summary>Amplitude ID; 0 means no reference.</summary>
+    API_FIELD()
+    uint64 ID = 0;
+
+    /// <summary>Whether an ID is set.</summary>
+    bool IsValid() const
+    {
+        return ID != 0;
+    }
+};
