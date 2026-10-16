@@ -16,6 +16,7 @@ imgui.ini
 *.csproj
 !Tests/**/*.csproj
 *.sln
+*.slnx
 launchSettings.json
 
 # Ignore Visual Code project files (generated locally)
