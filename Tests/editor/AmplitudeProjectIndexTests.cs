@@ -78,5 +78,35 @@ namespace AmplitudeAudioEditor.Tests
             Assert.That(info.Name, Is.EqualTo("bassboost"));
             Assert.That(info.RelativePath, Is.EqualTo("effects/bassboost.json"));
         }
+
+        [Test]
+        public void ResolvesTheAttenuationOfASound()
+        {
+            var index = AmplitudeProjectIndex.Load(Fixture);
+
+            Assert.That(index.TryGetAttenuation(201, out var shape));
+            Assert.That(shape.Kind, Is.EqualTo(AmplitudeAttenuationKind.Sphere));
+            Assert.That(shape.Inner, Is.EqualTo(new[] { 964f }));
+            Assert.That(shape.Outer, Is.EqualTo(new[] { 1024f }));
+        }
+
+        [Test]
+        public void ResolvesABoxAttenuationOfACollection()
+        {
+            var index = AmplitudeProjectIndex.Load(Fixture);
+
+            Assert.That(index.TryGetAttenuation(1003, out var shape));
+            Assert.That(shape.Kind, Is.EqualTo(AmplitudeAttenuationKind.Box));
+            Assert.That(shape.Inner, Is.EqualTo(new[] { 100f, 50f, 100f }));
+        }
+
+        [Test]
+        public void NoAttenuationMeansNoShape()
+        {
+            var index = AmplitudeProjectIndex.Load(Fixture);
+
+            Assert.That(index.TryGetAttenuation(200, out _), Is.False);   // switch container without one
+            Assert.That(index.TryGetAttenuation(999999, out _), Is.False); // unknown id
+        }
     }
 }

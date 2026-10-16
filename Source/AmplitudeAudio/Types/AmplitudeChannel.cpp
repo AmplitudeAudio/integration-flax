@@ -102,7 +102,12 @@ bool AmplitudeChannel::IsValid() const
 
 bool AmplitudeChannel::IsPlaying() const
 {
-    return _channel.Valid() && _channel.GetPlaybackState() == SparkyStudios::Audio::Amplitude::eChannelPlaybackState_Playing;
+    if (!_channel.Valid())
+        return false;
+    const auto state = _channel.GetPlaybackState();
+    return state == SparkyStudios::Audio::Amplitude::eChannelPlaybackState_Playing
+        || state == SparkyStudios::Audio::Amplitude::eChannelPlaybackState_Pending
+        || state == SparkyStudios::Audio::Amplitude::eChannelPlaybackState_FadingIn;
 }
 
 AmplitudeChannelState AmplitudeChannel::GetState() const

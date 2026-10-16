@@ -19,10 +19,13 @@
 // clang-format on
 
 #include <Engine/Core/Log.h>
+#include <Engine/Core/Math/OrientedBoundingBox.h>
+#include <Engine/Debug/DebugDraw.h>
 #include <Engine/Serialization/Serialization.h>
 
 #include <AmplitudeAudio/Actors/AmplitudeEntity.h>
 #include <AmplitudeAudio/Amplitude.h>
+#include <AmplitudeAudio/Runtime/Spatial/SpatialMath.h>
 #include <AmplitudeAudio/Types/AmplitudeChannel.h>
 
 AmplitudeEmitter::AmplitudeEmitter(const SpawnParams& params)
@@ -122,6 +125,114 @@ void AmplitudeEmitter::OnDisable()
     if (StopOnDisable)
         ReleaseChannel();
 }
+
+#if USE_EDITOR
+void AmplitudeEmitter::SetEditorAttenuation(int32 kind, const Array<float>& inner, const Array<float>& outer)
+{
+    _attenuationKind = kind;
+    _attenuationInner = inner;
+    _attenuationOuter = outer;
+}
+
+void AmplitudeEmitter::ClearEditorAttenuation()
+{
+    _attenuationKind = -1;
+    _attenuationInner.Clear();
+    _attenuationOuter.Clear();
+}
+
+void AmplitudeEmitter::OnDebugDrawSelected()
+{
+    if (_attenuationKind >= 0 && GetActor())
+    {
+        const Vector3 pos = GetActor()->GetPosition();
+        const Quaternion rot = GetActor()->GetOrientation();
+        const Color innerColor = Color::Yellow;
+        Color outerColor = Color::Yellow;
+        outerColor.A *= 0.5f;
+
+        switch (_attenuationKind)
+        {
+        case 0: // Sphere
+            if (_attenuationInner.Count() >= 1)
+                DebugDraw::DrawWireSphere(BoundingSphere(pos, _attenuationInner[0]), innerColor);
+            if (_attenuationOuter.Count() >= 1)
+                DebugDraw::DrawWireSphere(BoundingSphere(pos, _attenuationOuter[0]), outerColor);
+            break;
+        case 1: // Box
+            if (_attenuationInner.Count() >= 3)
+            {
+                OrientedBoundingBox innerObb(Vector3::Zero, Vector3(_attenuationInner[0], _attenuationInner[1], _attenuationInner[2]));
+                innerObb.Transform(GetActor()->GetTransform());
+                DebugDraw::DrawWireBox(innerObb, innerColor);
+            }
+            if (_attenuationOuter.Count() >= 3)
+            {
+                OrientedBoundingBox outerObb(Vector3::Zero, Vector3(_attenuationOuter[0], _attenuationOuter[1], _attenuationOuter[2]));
+                outerObb.Transform(GetActor()->GetTransform());
+                DebugDraw::DrawWireBox(outerObb, outerColor);
+            }
+            break;
+        case 2: // Capsule
+            if (_attenuationInner.Count() >= 2)
+            {
+                const float r = _attenuationInner[0];
+                const float length = Math::Max(2.0f * (_attenuationInner[1] - r), 0.0f);
+                DebugDraw::DrawWireCapsule(pos, AmplitudeAudio::Spatial::CapsuleDrawRotation(rot), r, length, innerColor);
+            }
+            if (_attenuationOuter.Count() >= 2)
+            {
+                const float r = _attenuationOuter[0];
+                const float length = Math::Max(2.0f * (_attenuationOuter[1] - r), 0.0f);
+                DebugDraw::DrawWireCapsule(pos, AmplitudeAudio::Spatial::CapsuleDrawRotation(rot), r, length, outerColor);
+            }
+            break;
+        case 3: // Cone
+            if (_attenuationInner.Count() >= 2)
+            {
+                const float r = _attenuationInner[0];
+                const float h = _attenuationInner[1];
+                const Vector3 forward = rot * Vector3::Forward;
+                const Vector3 right = rot * Vector3::Right;
+                const Vector3 up = rot * Vector3::Up;
+                const Vector3 baseCenter = pos + forward * h;
+                Vector3 prev = baseCenter + right * r;
+                for (int32 i = 1; i <= 24; i++)
+                {
+                    const float angle = i * (TWO_PI / 24.0f);
+                    const Vector3 rim = baseCenter + (right * Math::Cos(angle) + up * Math::Sin(angle)) * r;
+                    DebugDraw::DrawLine(prev, rim, innerColor);
+                    if (i % 3 == 0)
+                        DebugDraw::DrawLine(pos, rim, innerColor);
+                    prev = rim;
+                }
+            }
+            if (_attenuationOuter.Count() >= 2)
+            {
+                const float r = _attenuationOuter[0];
+                const float h = _attenuationOuter[1];
+                const Vector3 forward = rot * Vector3::Forward;
+                const Vector3 right = rot * Vector3::Right;
+                const Vector3 up = rot * Vector3::Up;
+                const Vector3 baseCenter = pos + forward * h;
+                Vector3 prev = baseCenter + right * r;
+                for (int32 i = 1; i <= 24; i++)
+                {
+                    const float angle = i * (TWO_PI / 24.0f);
+                    const Vector3 rim = baseCenter + (right * Math::Cos(angle) + up * Math::Sin(angle)) * r;
+                    DebugDraw::DrawLine(prev, rim, outerColor);
+                    if (i % 3 == 0)
+                        DebugDraw::DrawLine(pos, rim, outerColor);
+                    prev = rim;
+                }
+            }
+            break;
+        }
+    }
+
+    Script::OnDebugDrawSelected();
+}
+#endif
 
 void AmplitudeEmitter::Serialize(SerializeStream& stream, const void* otherObj)
 {

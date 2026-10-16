@@ -14,6 +14,7 @@
 
 using AmplitudeAudio;
 using AmplitudeAudioEditor.Cooking;
+using AmplitudeAudioEditor.Gizmos;
 using AmplitudeAudioEditor.Project;
 using FlaxEditor;
 using FlaxEngine;
@@ -43,6 +44,7 @@ namespace AmplitudeAudioEditor
             _assetProxies = new AmplitudeAssetProxies();
             _assetProxies.Register();
             AmplitudeCooker.Register();
+            AmplitudeAttenuationGizmo.Instance.Initialize();
 
             var asset = GameSettings.LoadAsset<AmplitudeSettings>();
             if (asset == null)
@@ -72,6 +74,7 @@ namespace AmplitudeAudioEditor
             }
 
             AmplitudeCooker.Unregister();
+            AmplitudeAttenuationGizmo.Instance.Deinitialize();
             _assetProxies?.Unregister();
             _assetProxies = null;
             AmplitudeProjectWatcher.Instance.Dispose();

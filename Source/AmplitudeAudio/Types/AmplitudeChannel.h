@@ -74,6 +74,10 @@ public:
     API_EVENT() Delegate<> OnStop;
     API_EVENT() Delegate<> OnLoop;
 
+    /// <summary>Returns the internal SDK channel handle (C++ only).</summary>
+    const SparkyStudios::Audio::Amplitude::Channel& GetHandle() const { return _channel; }
+    SparkyStudios::Audio::Amplitude::Channel& GetHandle() { return _channel; }
+
 private:
     SparkyStudios::Audio::Amplitude::Channel _channel;
     std::shared_ptr<CallbackState> _state;

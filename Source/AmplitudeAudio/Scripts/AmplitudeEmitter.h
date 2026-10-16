@@ -97,6 +97,18 @@ public:
     bool GetPlayOnEnable() const override { return AutoPlay == AmplitudeAutoPlayMode::OnEnable; }
     bool GetStopOnDisable() const override { return StopOnDisable; }
 
+#if USE_EDITOR
+    API_FUNCTION()
+    void SetEditorAttenuation(int32 kind, const Array<float>& inner, const Array<float>& outer);
+
+    API_FUNCTION()
+    void ClearEditorAttenuation();
+
+    bool HasEditorAttenuation() const { return _attenuationKind >= 0; }
+
+    void OnDebugDrawSelected() override;
+#endif
+
     // Script
     void OnStart() override;
     void OnEnable() override;
@@ -107,4 +119,9 @@ public:
 private:
     void                                       ReleaseChannel();
     ScriptingObjectReference<AmplitudeChannel> _channel;
+#if USE_EDITOR
+    int32 _attenuationKind = -1;
+    Array<float> _attenuationInner;
+    Array<float> _attenuationOuter;
+#endif
 };
