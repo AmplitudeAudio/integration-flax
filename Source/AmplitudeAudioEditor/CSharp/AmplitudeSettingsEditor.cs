@@ -53,6 +53,33 @@ namespace AmplitudeAudioEditor
         }
 
         /// <summary>
+        /// Replaces an all-zero obstruction block with the plugin defaults. Assets created from the editor's
+        /// "New" menu (or by older plugin versions) come out of a zeroed C# struct, which would disable obstruction.
+        /// </summary>
+        public static void RepairObstruction()
+        {
+            var settings = Get();
+            if (settings == null)
+                return;
+
+            var o = settings.Obstruction;
+            var zeroed = o.DefaultAmount == 0.0f && o.MaxDistance == 0.0f && o.FullObstructionDistance == 0.0f &&
+                         o.RayBudgetPerFrame == 0 && o.IndirectRayCount == 0 && o.IndirectRadius == 0.0f &&
+                         o.AttackSmoothing == 0.0f && o.ReleaseSmoothing == 0.0f;
+            if (!zeroed)
+                return;
+
+            var defaults = Amplitude.GetDefaultObstructionSettings();
+            // Keep what the user may have already set.
+            defaults.MaterialAmounts = o.MaterialAmounts;
+            defaults.TagAmounts = o.TagAmounts;
+            defaults.DebugDraw = o.DebugDraw;
+            settings.Obstruction = defaults;
+            Save(settings);
+            Debug.Log("[AmplitudeAudio] Obstruction settings were uninitialized; restored the defaults.");
+        }
+
+        /// <summary>
         /// Saves the settings to the disk.
         /// </summary>
         public static void Save(AmplitudeSettings settings)

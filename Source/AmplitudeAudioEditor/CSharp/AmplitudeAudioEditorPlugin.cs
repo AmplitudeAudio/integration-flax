@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using AmplitudeAudio;
 using AmplitudeAudioEditor.Cooking;
 using AmplitudeAudioEditor.Project;
 using FlaxEditor;
@@ -45,7 +46,17 @@ namespace AmplitudeAudioEditor
 
             var asset = GameSettings.LoadAsset<AmplitudeSettings>();
             if (asset == null)
-                AmplitudeSettingsEditor.Save(new AmplitudeSettings());
+            {
+                // C# structs start zeroed; the plugin's real defaults live in C++.
+                AmplitudeSettingsEditor.Save(new AmplitudeSettings
+                {
+                    Obstruction = Amplitude.GetDefaultObstructionSettings(),
+                });
+            }
+            else
+            {
+                AmplitudeSettingsEditor.RepairObstruction();
+            }
 
             _initialized = true;
             Debug.Log("[AmplitudeAudio] C# editor plugin initialized.");

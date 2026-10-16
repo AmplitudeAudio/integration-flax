@@ -30,6 +30,7 @@ namespace AmplitudeAudioEditor.Project
         Rtpc,
         Switch,
         SoundBank,
+        Effect,
     }
 
     /// <summary>Information about an Amplitude object from the project sources.</summary>
@@ -84,6 +85,7 @@ namespace AmplitudeAudioEditor.Project
             ("rtpc", AmplitudeObjectKind.Rtpc),
             ("switches", AmplitudeObjectKind.Switch),
             ("soundbanks", AmplitudeObjectKind.SoundBank),
+            ("effects", AmplitudeObjectKind.Effect),
         };
 
         private readonly Dictionary<AmplitudeObjectKind, List<AmplitudeObjectInfo>> _objects =

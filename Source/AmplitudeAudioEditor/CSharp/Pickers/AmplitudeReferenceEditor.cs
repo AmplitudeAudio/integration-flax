@@ -372,4 +372,12 @@ namespace AmplitudeAudioEditor.Pickers
         // Without a sibling switch the state can't be resolved; show the raw ID instead of flagging it missing.
         protected override string MissingLabel(ulong id, ulong context) => context == 0 ? $"ID: {id}" : base.MissingLabel(id, context);
     }
+
+    [CustomEditor(typeof(AmplitudeEnvironmentEffectRef)), DefaultEditor]
+    public sealed class AmplitudeEnvironmentEffectRefEditor : AmplitudeReferenceEditor
+    {
+        protected override AmplitudeObjectKind[] Kinds => new[] { AmplitudeObjectKind.Effect };
+        protected override ulong GetId(object reference) => ((AmplitudeEnvironmentEffectRef)reference).ID;
+        protected override object CreateReference(ulong id) => new AmplitudeEnvironmentEffectRef { ID = id };
+    }
 }

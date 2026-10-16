@@ -67,5 +67,16 @@ namespace AmplitudeAudioEditor.Tests
 
             Assert.That(index.GetObjects(AmplitudeObjectKind.Sound), Is.Empty);
         }
+
+        [Test]
+        public void ListsEffects()
+        {
+            var index = AmplitudeProjectIndex.Load(Fixture);
+
+            Assert.That(index.GetObjects(AmplitudeObjectKind.Effect).Count, Is.EqualTo(1));
+            Assert.That(index.TryFind(AmplitudeObjectKind.Effect, 5, out var info));
+            Assert.That(info.Name, Is.EqualTo("bassboost"));
+            Assert.That(info.RelativePath, Is.EqualTo("effects/bassboost.json"));
+        }
     }
 }
