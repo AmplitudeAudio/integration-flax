@@ -9,11 +9,14 @@ Source/*.Gen.*
 
 # Local files
 imgui.ini
+.xmake/
 .clangd
 
 # Ignore Visual Studio project files (generated locally)
 *.csproj
+!Tests/**/*.csproj
 *.sln
+*.slnx
 launchSettings.json
 
 # Ignore Visual Code project files (generated locally)
@@ -55,3 +58,7 @@ _ReSharper*/
 # Ignore Nuget packages folder
 packages/
 .claude/worktrees
+
+# Unit test build outputs
+Tests/editor/bin/
+Tests/editor/obj/

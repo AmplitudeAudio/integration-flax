@@ -1,0 +1,41 @@
+{
+	"ID": "6172436ab56f46acb3832f7c36d2b491",
+	"TypeName": "FlaxEditor.Content.Settings.GameSettings",
+	"EngineBuild": 7012,
+	"Data": {
+	"ProductName": "AmplitudeAudio",
+	"CompanyName": "Sparky Studios",
+	"CopyrightNotice": null,
+	"Version": null,
+	"Icon": null,
+	"FirstScene": "00000000000000000000000000000000",
+	"NoSplashScreen": false,
+	"SplashScreen": null,
+	"Time": null,
+	"Audio": null,
+	"LayersAndTags": null,
+	"Physics": null,
+	"Input": null,
+	"Graphics": null,
+	"Network": null,
+	"Navigation": null,
+	"Localization": null,
+	"GameCooking": null,
+	"Streaming": null,
+	"CustomSettings": {
+		"Amplitude Settings": "cf5f9c7047af8c7e976a2f9bb5572b3d"
+	},
+	"WindowsPlatform": null,
+	"UWPPlatform": null,
+	"LinuxPlatform": null,
+	"PS4Platform": null,
+	"XboxOnePlatform": null,
+	"XboxScarlettPlatform": null,
+	"AndroidPlatform": null,
+	"SwitchPlatform": null,
+	"PS5Platform": null,
+	"MacPlatform": null,
+	"iOSPlatform": null,
+	"WebPlatform": null
+}
+}

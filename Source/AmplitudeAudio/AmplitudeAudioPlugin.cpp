@@ -14,21 +14,13 @@
 
 #include "AmplitudeAudioPlugin.h"
 
-// clang-formatt off
-#include "Core/Cpp20Compat.h"
+// clang-format off
+#include <AmplitudeAudio/Core/Cpp20Compat.h>
 // clang-format on
 
-#include <AudioSystem/Core/AudioSystem.h>
-#include <Engine/Core/Log.h>
-#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <AmplitudeAudio/Amplitude.h>
 
-#include "AmplitudeMiddleware.h"
-#include "Core/AmplitudeHelpers.h"
-#include "Core/Common.h"
-
-// ============================================================================
-//  AmplitudeAudioPlugin — Constructor
-// ============================================================================
+bool AmplitudeAudioPlugin::_initialized = false;
 
 AmplitudeAudioPlugin::AmplitudeAudioPlugin(const SpawnParams& params)
     : GamePlugin(params)
@@ -40,89 +32,26 @@ AmplitudeAudioPlugin::AmplitudeAudioPlugin(const SpawnParams& params)
     _description.RepositoryUrl = TEXT("https://github.com/AmplitudeAudio/integration-flax");
 }
 
-// ============================================================================
-//  AmplitudeAudioPlugin — Initialize
-// ============================================================================
-
 void AmplitudeAudioPlugin::Initialize()
 {
-    using namespace SparkyStudios::Audio::Amplitude;
-
     GamePlugin::Initialize();
 
-    AudioSystem* audioSystem = AudioSystem::Get();
-    if (audioSystem == nullptr)
-    {
-        LOG(Error, "[AmplitudeAudioPlugin] Initialize: AudioSystem is not available. "
-                   "Ensure the AudioSystem plugin is loaded before AmplitudeAudio.");
+    if (_initialized)
         return;
-    }
 
-    _middleware = New<AmplitudeAudio::AmplitudeMiddleware>();
-    audioSystem->RegisterMiddleware(_middleware);
+    _initialized = true;
 
-    // Initialize the Amplitude memory manager with Flax-backed allocator.
-    MemoryManager::Initialize(std::make_unique<AmplitudeAudio::FlaxMemoryAllocator>());
-
-    const auto rollbackInitialization = [this, audioSystem]()
-    {
-        audioSystem->UnregisterMiddleware();
-
-        if (_middleware != nullptr)
-        {
-            Delete(_middleware);
-            _middleware = nullptr;
-        }
-
-        MemoryManager::Deinitialize();
-    };
-
-    // Load middleware configuration
-    const String configPath = String(AmplitudeAudio::kAssetBasePath) + TEXT("Config.json");
-    if (!_middleware->LoadConfiguration(configPath))
-    {
-        LOG(Error, "[AmplitudeAudioPlugin] Failed to load middleware configuration: {0}", configPath);
-        rollbackInitialization();
-        return;
-    }
-
-    // Start the AudioSystem now that the middleware is registered and configured
-    if (!audioSystem->Startup())
-    {
-        LOG(Error, "[AmplitudeAudioPlugin] AudioSystem startup failed. "
-                   "Ensure Content/Sounds/Amplitude/Config.json exists with valid platform profiles.");
-        rollbackInitialization();
-        return;
-    }
-
-    LOG(Info, "[AmplitudeAudioPlugin] Amplitude Audio middleware registered.");
+    // In the editor Flax initializes game plugins only for Play sessions, so the engine follows Play there.
+    Amplitude::Startup();
 }
-
-// ============================================================================
-//  AmplitudeAudioPlugin — Deinitialize
-// ============================================================================
 
 void AmplitudeAudioPlugin::Deinitialize()
 {
-    using namespace SparkyStudios::Audio::Amplitude;
-
-    AudioSystem* audioSystem = AudioSystem::Get();
-    if (audioSystem != nullptr)
+    if (_initialized)
     {
-        audioSystem->Shutdown();
-        audioSystem->UnregisterMiddleware();
+        Amplitude::Shutdown();
+        _initialized = false;
     }
-
-    if (_middleware != nullptr)
-    {
-        Delete(_middleware);
-        _middleware = nullptr;
-    }
-
-    // Tear down the Amplitude memory manager.
-    MemoryManager::Deinitialize();
-
-    LOG(Info, "[AmplitudeAudioPlugin] Amplitude Audio middleware unregistered.");
 
     GamePlugin::Deinitialize();
 }

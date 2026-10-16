@@ -24,7 +24,6 @@ public class AmplitudeAudio : GameModule
         base.Setup(options);
         BuildNativeCode = true;
         options.CompileEnv.CppVersion = CppVersion.Cpp17;
-        options.PublicDependencies.Add("AudioSystem");
 
         // Locate the Amplitude Audio SDK via AM_SDK_PATH environment variable
         var sdkRoot = Environment.GetEnvironmentVariable("AM_SDK_PATH");
@@ -164,6 +163,10 @@ public class AmplitudeAudio : GameModule
             case TargetPlatform.Android:
                 options.Libraries.Add(Path.Combine(libDir, $"libAmplitude{libSuffix}.so"));
                 options.DependencyFiles.Add(Path.Combine(libDir, $"libAmplitude{libSuffix}.so"));
+                // Add $ORIGIN to rpath so libAmplitude.so is found next to the
+                // plugin binary at load time. The $ORIGIN token must reach the
+                // linker un-expanded.
+                options.LinkEnv.CustomArgs.Add("-Wl,-rpath,$ORIGIN");
                 break;
         }
     }

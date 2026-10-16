@@ -25,14 +25,100 @@
 //  IMPORTANT: include this header BEFORE any Amplitude SDK headers.
 // ============================================================================
 
+// ============================================================================
+//  Windows header isolation
+//
+//  The Amplitude SDK includes <Windows.h> directly (in Config.h) without
+//  the guards that Flax Engine uses.  We pre-include it here with the same
+//  exclusions Flax uses (NOGDI, etc.) and then #undef the macros that
+//  collide with Flax types/methods.  The pull and the #undef block share a
+//  project-local guard so the macros run exactly once, regardless of whether
+//  some other header already included <Windows.h> earlier.
+// ============================================================================
+#if defined(PLATFORM_WIN32) || defined(PLATFORM_WINDOWS) || defined(_WIN32)
+#ifndef AMPLITUDE_WINDOWS_H_PULLED
+#define AMPLITUDE_WINDOWS_H_PULLED
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef NOGDI
+#define NOGDI
+#endif
+#ifndef NODRAWTEXT
+#define NODRAWTEXT
+#endif
+#ifndef NOCTLMGR
+#define NOCTLMGR
+#endif
+#ifndef NOFLATSBAPIS
+#define NOFLATSBAPIS
+#endif
+
+#include <Windows.h>
+
+// Remove Windows macros that conflict with Flax Engine identifiers.
+// This list runs ONCE under our own guard; we never #undef on a second
+// inclusion of this header.
+#undef MemoryBarrier
+#undef DeleteFile
+#undef MoveFile
+#undef CopyFile
+#undef CreateDirectory
+#undef GetComputerName
+#undef GetUserName
+#undef MessageBox
+#undef GetCommandLine
+#undef CreateWindow
+#undef CreateProcess
+#undef SetWindowText
+#undef DrawText
+#undef CreateFont
+#undef IsMinimized
+#undef IsMaximized
+#undef LoadIcon
+#undef InterlockedOr
+#undef InterlockedAnd
+#undef InterlockedExchange
+#undef InterlockedCompareExchange
+#undef InterlockedIncrement
+#undef InterlockedDecrement
+#undef InterlockedAdd
+#undef GetObject
+#undef GetClassName
+#undef GetMessage
+#undef CreateMutex
+#undef DrawState
+#undef LoadLibrary
+#undef Yield
+#undef GetEnvironmentVariable
+#undef SetEnvironmentVariable
+#undef small
+#undef IGNORE
+#undef OPTIONAL
+#undef Rectangle
+#undef IN
+#undef OUT
+#endif // AMPLITUDE_WINDOWS_H_PULLED
+#endif // PLATFORM_WIN32 || PLATFORM_WINDOWS || _WIN32
+
 #if __cplusplus < 202002L
 
 // ---- std::span polyfill ---------------------------------------------------
+// Defined in a project namespace and injected into std via a using-alias.
+// [namespace.std] forbids adding new class templates to namespace std, but
+// permits a using-alias. When a future standard library exposes std::span,
+// it must set __cpp_lib_span and this block compiles to nothing.
 #ifndef __cpp_lib_span
 #include <cstddef>
 #include <type_traits>
 
-namespace std
+namespace AmplitudeAudio
+{
+namespace cpp20
 {
     template<typename T>
     class span
@@ -65,22 +151,34 @@ namespace std
         pointer   m_data;
         size_type m_size;
     };
-} // namespace std
+} // namespace cpp20
+} // namespace AmplitudeAudio
+
+namespace std
+{
+    template<typename T> using span = AmplitudeAudio::cpp20::span<T>;
+}
 #endif // __cpp_lib_span
 
 // ---- std::is_pointer_v / std::is_void_v (C++17 variable templates) --------
 // These should already be available in C++17 via <type_traits>, but if the
-// compiler's standard library does not provide them, polyfill here.
+// compiler's standard library does not provide them, polyfill via using-alias.
 #if !defined(__cpp_lib_type_trait_variable_templates) || __cpp_lib_type_trait_variable_templates < 201510L
 #include <type_traits>
+namespace AmplitudeAudio
+{
+namespace cpp20
+{
+    template<typename T> inline constexpr bool is_pointer_v = std::is_pointer<T>::value;
+    template<typename T> inline constexpr bool is_void_v    = std::is_void<T>::value;
+} // namespace cpp20
+} // namespace AmplitudeAudio
+
 namespace std
 {
-    template<typename T>
-    inline constexpr bool is_pointer_v = std::is_pointer<T>::value;
-
-    template<typename T>
-    inline constexpr bool is_void_v = std::is_void<T>::value;
-} // namespace std
+    using AmplitudeAudio::cpp20::is_pointer_v;
+    using AmplitudeAudio::cpp20::is_void_v;
+}
 #endif
 
 #endif // __cplusplus < 202002L

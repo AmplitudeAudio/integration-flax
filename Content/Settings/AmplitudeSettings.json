@@ -1,0 +1,38 @@
+{
+	"ID": "cf5f9c7047af8c7e976a2f9bb5572b3d",
+	"TypeName": "FlaxEditor.Content.Settings.AmplitudeSettings",
+	"EngineBuild": 7012,
+	"Data": {
+	"ProjectSourcesPath": "sources",
+	"ProjectBuildPath": "build",
+	"DefaultProfile": {
+		"Platform": 0,
+		"EngineConfigFile": null,
+		"InitSoundBanks": null,
+		"Plugins": null,
+		"PluginSearchPaths": null
+	},
+	"Profiles": null,
+	"PackagingMode": 0,
+	"AmpkToolPath": null,
+	"Compression": 0,
+	"BlockSize": 64,
+	"Obstruction": {
+		"DefaultAmount": 1.0,
+		"MaterialAmounts": null,
+		"TagAmounts": null,
+		"MaxDistance": 5000.0,
+		"FullObstructionDistance": 1000.0,
+		"RayBudgetPerFrame": 16,
+		"IndirectRayCount": 8,
+		"IndirectRadius": 150.0,
+		"RandomSeed": 1337,
+		"AttackSmoothing": 0.05,
+		"ReleaseSmoothing": 0.25,
+		"Layers": {
+			"Mask": 4294967295
+		},
+		"DebugDraw": false
+	}
+}
+}

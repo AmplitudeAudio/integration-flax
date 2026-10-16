@@ -1,0 +1,1 @@
+{"id":2,"name":"hall","max_distance":2000,"shape":{"zone_type":"Box","zone":{"inner":{"half_width":100,"half_height":50,"half_depth":100},"outer":{"half_width":200,"half_height":100,"half_depth":200}}}}
