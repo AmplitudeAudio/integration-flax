@@ -172,6 +172,10 @@ namespace AmplitudeAudio
         m_running = true;
         LOG(Info, "[Amplitude] Engine started with config '{0}'.", profile.EngineConfigFile);
 
+        m_startupWarnings = BuildTrackingWarnings(m_engine->IsGameTrackingRooms(), m_engine->IsGameTrackingEnvironmentAmounts());
+        for (const ::String& warning : m_startupWarnings)
+            LOG(Warning, "[Amplitude] {0}", warning);
+
         // Notify clients that the engine has started
         for (IAmplitudeServiceClient* client : m_clients)
             client->OnEngineStarted();
@@ -247,9 +251,20 @@ namespace AmplitudeAudio
 
         m_appPaused = false;
         m_paused    = false;
+        m_startupWarnings.Clear();
 
         if (wasRunning)
             LOG(Info, "[Amplitude] Engine stopped.");
+    }
+
+    Array<::String> AmplitudeService::BuildTrackingWarnings(bool trackingRooms, bool trackingEnvironments)
+    {
+        Array<::String> warnings;
+        if (!trackingRooms)
+            warnings.Add(TEXT("The engine config has track_rooms = false: AmplitudeRoom actors will not be applied. Set \"track_rooms\": true in the config's \"game\" section."));
+        if (!trackingEnvironments)
+            warnings.Add(TEXT("The engine config has track_environments = false: AmplitudeEnvironment factors will not be applied. Set \"track_environments\": true in the config's \"game\" section."));
+        return warnings;
     }
 
     void AmplitudeService::Tick()

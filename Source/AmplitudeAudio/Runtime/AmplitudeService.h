@@ -58,6 +58,12 @@ namespace AmplitudeAudio
         /// <summary>Stops the engine and unloads every sound bank. Safe to call when not running.</summary>
         void Shutdown();
 
+        /// <summary>Constructs human-readable warnings when room or environment tracking is disabled in config.</summary>
+        static Array<::String> BuildTrackingWarnings(bool trackingRooms, bool trackingEnvironments);
+
+        /// <summary>Warnings recorded during the last successful Startup.</summary>
+        [[nodiscard]] const Array<::String>& GetStartupWarnings() const { return m_startupWarnings; }
+
         /// <summary>Advances the engine by one frame. Driven by Engine::Update.</summary>
         void Tick();
 
@@ -116,6 +122,7 @@ namespace AmplitudeAudio
         BankRegistry m_banks;
         AmplitudeOcclusionProcessor m_occlusion;
         ObstructionSurfaces m_surfaces;
+        Array<::String> m_startupWarnings;
         bool m_running = false;
         bool m_surfacesDirty = true;
         bool m_ownsMemoryManager = false;
