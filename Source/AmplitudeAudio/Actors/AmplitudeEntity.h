@@ -73,6 +73,8 @@ public:
     AmplitudeObstructionMode GetObstructionMode() const override;
     bool IsOcclusionActive() const override;
     Vector3 GetOcclusionLocation() const override;
+    const Actor* GetOcclusionActor() const override;
+    uint32 GetOcclusionLayers() const override;
     void ApplyOcclusion(float obstruction, float occlusion) override;
 
     // ISpatialTarget

@@ -95,6 +95,16 @@ Vector3 AmplitudeEntity::GetOcclusionLocation() const
     return GetPosition();
 }
 
+const Actor* AmplitudeEntity::GetOcclusionActor() const
+{
+    return this;
+}
+
+uint32 AmplitudeEntity::GetOcclusionLayers() const
+{
+    return ObstructionLayers.Mask;
+}
+
 void AmplitudeEntity::ApplyOcclusion(float obstruction, float occlusion)
 {
     LOG(Info, "Applying occlusion: obstruction={}, occlusion={}", obstruction, occlusion);

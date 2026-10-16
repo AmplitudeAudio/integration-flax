@@ -14,8 +14,11 @@
 
 #include "TestFixture.h"
 
+#include <Engine/Scripting/ScriptingObject.h>
+
 #include <ThirdParty/catch2/catch.hpp>
 
+#include <AmplitudeAudio/Actors/AmplitudeEntity.h>
 #include <AmplitudeAudio/Runtime/Occlusion/AmplitudeOcclusionProcessor.h>
 
 using AmplitudeAudio::AmplitudeOcclusionProcessor;
@@ -35,6 +38,8 @@ namespace
         AmplitudeObstructionMode GetObstructionMode() const override { return Mode; }
         bool IsOcclusionActive() const override { return Active; }
         Vector3 GetOcclusionLocation() const override { return Location; }
+        const Actor* GetOcclusionActor() const override { return nullptr; }
+        uint32 GetOcclusionLayers() const override { return MAX_uint32; }
         void ApplyOcclusion(float obstruction, float occlusion) override
         {
             Obstruction = obstruction;
@@ -220,4 +225,14 @@ TEST_CASE("the ray observer sees every cast", "[occlusion-processor]")
     processor.Update(Vector3::Zero, 0.016f, Instant(), AlwaysBlocked);
     CHECK(direct == 1);
     CHECK(indirect == 1);
+}
+
+TEST_CASE("an entity exposes its own hierarchy and layers to the caster", "[occlusion-processor]")
+{
+    auto* entity = ScriptingObject::NewObject<AmplitudeEntity>();
+    entity->ObstructionLayers.Mask = 6;
+    const IOcclusionSource* source = entity;
+    CHECK(source->GetOcclusionActor() == entity);
+    CHECK(source->GetOcclusionLayers() == 6u);
+    entity->DeleteObjectNow();
 }

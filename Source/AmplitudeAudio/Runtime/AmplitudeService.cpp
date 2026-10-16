@@ -312,8 +312,7 @@ namespace AmplitudeAudio
 #endif
             m_occlusion.Update(AmVec3ToFlaxVec3(listener.GetLocation()), ::Time::Update.UnscaledDeltaTime.GetTotalSeconds(), obstruction,
                 [&caster](IOcclusionSource& source, const Vector3& from, const Vector3& to) {
-                    auto* entity = static_cast<AmplitudeEntity*>(&source);
-                    return caster.Cast(entity, entity->ObstructionLayers.Mask, from, to);
+                    return caster.Cast(source.GetOcclusionActor(), source.GetOcclusionLayers(), from, to);
                 });
 #if COMPILE_WITH_DEBUG_DRAW
             if (obstruction.DebugDraw)

@@ -18,6 +18,8 @@
 #include <Engine/Core/Math/Vector3.h>
 #include <Engine/Platform/Defines.h>
 
+class Actor;
+
 namespace AmplitudeAudio
 {
     /// <summary>Something the processor obstructs: an entity now, a sound instance in phase 5.</summary>
@@ -29,6 +31,8 @@ namespace AmplitudeAudio
         /// <summary>False when nothing it plays is audible, so no rays are spent on it.</summary>
         virtual bool IsOcclusionActive() const = 0;
         virtual Vector3 GetOcclusionLocation() const = 0;
+        virtual const Actor* GetOcclusionActor() const = 0;
+        virtual uint32 GetOcclusionLayers() const = 0;
         /// <summary>Written only when a value changed by more than a small epsilon.</summary>
         virtual void ApplyOcclusion(float obstruction, float occlusion) = 0;
     };
