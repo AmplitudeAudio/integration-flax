@@ -183,6 +183,50 @@ TEST_CASE("a disabled part applies nothing and applies later when enabled", "[sp
     CHECK(target.Factors[9] == Approx(1.0f));
 }
 
+TEST_CASE("an idle target costs nothing with rooms disabled", "[spatial-processor]")
+{
+    AmplitudeSpatialProcessor processor;
+    FakeTarget target;
+    processor.AddTarget(&target);
+    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({{9, Zone(Vector3::Zero, 100), 0.0f}}));
+    processor.Update(false, true);
+
+    processor.Update(false, true);
+    CHECK(processor.GetLastUpdatedCount() == 0);
+    CHECK(target.RoomWrites == 0);
+}
+
+TEST_CASE("an idle target costs nothing with environments disabled", "[spatial-processor]")
+{
+    AmplitudeSpatialProcessor processor;
+    FakeTarget target;
+    processor.AddTarget(&target);
+    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({{9, Zone(Vector3::Zero, 100), 0.0f}}));
+    processor.Update(true, false);
+
+    processor.Update(true, false);
+    CHECK(processor.GetLastUpdatedCount() == 0);
+    CHECK(target.FactorWrites == 0);
+}
+
+TEST_CASE("a part disabled while the target moved applies the new location once enabled", "[spatial-processor]")
+{
+    AmplitudeSpatialProcessor processor;
+    FakeTarget target;
+    processor.AddTarget(&target);
+    processor.SetWorld(Rooms({{5, Box(Vector3::Zero, 100)}}), Envs({}));
+    processor.Update(true, true);
+    REQUIRE(target.Room == 5);
+
+    target.Location = Vector3(1000, 0, 0);
+    processor.Update(false, true);
+    processor.Update(false, true);
+    CHECK(target.Room == 5);
+
+    processor.Update(true, true);
+    CHECK(target.Room == 0);
+}
+
 TEST_CASE("a removed target is never touched again", "[spatial-processor]")
 {
     AmplitudeSpatialProcessor processor;

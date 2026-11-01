@@ -143,7 +143,8 @@ namespace AmplitudeAudio
                 updatedThisTarget = true;
             }
 
-            if (!state.RoomDirty && !state.EnvDirty)
+            // Store the location once every enabled part is clean; a disabled part keeps its dirty flag and applies once enabled.
+            if ((!applyRooms || !state.RoomDirty) && (!applyEnvironments || !state.EnvDirty))
             {
                 state.LastLocation = currentLocation;
                 state.HasLocation = true;
